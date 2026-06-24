@@ -99,6 +99,12 @@ class APICalling {
     }
   }
 
+  void _applyNgrokHeaders(Map<String, String> headers, String url) {
+    if (url.contains('ngrok-free.dev') || url.contains('ngrok.io')) {
+      headers['ngrok-skip-browser-warning'] = 'true';
+    }
+  }
+
   // final timeoutMessage = 'The connection has timed out, Please try again!';
 
   String getToken() {
@@ -137,6 +143,7 @@ class APICalling {
     log("get requested url $url\n" + "header $finalHeader\n" + "");
 
     finalHeader['Content-Type'] = 'application/json';
+    _applyNgrokHeaders(finalHeader, url);
     // finalHeader['X-Frame-Options'] = "DENY";
     // finalHeader['Content-Security-Policy'] = "frame-ancestors 'none'";
 
@@ -214,6 +221,7 @@ class APICalling {
     }
 
     finalHeader['Content-Type'] = 'application/json';
+    _applyNgrokHeaders(finalHeader, url);
     if (addToken) {
       finalHeader['Authorization'] = getToken();
     }
@@ -314,6 +322,7 @@ class APICalling {
     }
 
     finalHeader['Content-Type'] = 'application/json';
+    _applyNgrokHeaders(finalHeader, url);
     // finalHeader['X-Frame-Options'] = "DENY";
     // finalHeader['Content-Security-Policy'] = "frame-ancestors 'none'";
     finalHeader['Authorization'] = getToken();
@@ -398,6 +407,7 @@ class APICalling {
     }
 
     finalHeader['Content-Type'] = 'application/json';
+    _applyNgrokHeaders(finalHeader, url);
     // finalHeader['X-Frame-Options'] = "DENY";
     // finalHeader['Content-Security-Policy'] = "frame-ancestors 'none'";
     finalHeader['Authorization'] = getToken();

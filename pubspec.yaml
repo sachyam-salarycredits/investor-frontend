@@ -34,8 +34,6 @@ dependencies:
   flyy_flutter_plugin: 1.1.41
   percent_indicator: ^3.4.0
   expand_widget: ^2.1.0
-  cashfree_pg: ^2.0.4+24
-  hypersnapsdk_flutter: ^1.0.8
   image_picker: ^0.8.4
   image_cropper: ^1.4.1
   file_picker: ^4.3.0

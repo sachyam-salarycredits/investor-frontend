@@ -418,21 +418,12 @@ class _FirstDepositScreenState extends State<FirstDepositScreen> {
               CustomButton(
                 titleStr: widget.fromOtp
                     ? content[0].btnText
-                    : !Utils.isFirstDepositVideoValidate
-                        ? 'Play'
-                        : content[1].btnText,
+                    : content[1].btnText,
                 onPress: () {
                   if (widget.fromOtp) {
                     context.pushNamed(RoutesName.BankDetail);
                   } else {
-                    if (Utils.isFirstDepositVideoValidate || Utils.isWeb) {
-                      context.pushNamed(RoutesName.NewFundTransferScreen);
-                    } else {
-                      navigateToVideoPlayer();
-                      // Utils.showAlert(
-                      //     context: context,
-                      //     msg: "Please watch video to proceed.");
-                    }
+                    context.pushNamed(RoutesName.NewFundTransferScreen);
                   }
                 },
               ),

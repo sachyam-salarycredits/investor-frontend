@@ -1,3 +1,5 @@
+import 'package:Monexo/modules/onboardingSteps/models/auto_invest_category_model.dart';
+
 class AutoInvestDetail {
   String? customerId;
   double? totalAmount;
@@ -18,13 +20,20 @@ class AutoInvestDetail {
 
   AutoInvestDetail.fromJson(Map<String, dynamic> json) {
     customerId = json['customerId'] == null ? null : json['customerId'];
-    totalAmount = json['totalAmount'] == null ? null : json['totalAmount'];
-    conservetiveRisk =
-        json['conservetiveRisk'] == null ? null : json['conservetiveRisk'];
-    moderateRisk = json['moderateRisk'] == null ? null : json['moderateRisk'];
-    highRisk = json['highRisk'] == null ? null : json['highRisk'];
-    enable = json['enable'] == null ? true : json['enable'];
-    flag = json['flag'] == null ? true : json['flag'];
+    totalAmount = json['totalAmount'] == null
+        ? null
+        : (json['totalAmount'] as num?)?.toDouble();
+    conservetiveRisk = json['conservetiveRisk'] == null
+        ? null
+        : (json['conservetiveRisk'] as num?)?.toDouble();
+    moderateRisk = json['moderateRisk'] == null
+        ? null
+        : (json['moderateRisk'] as num?)?.toDouble();
+    highRisk = json['highRisk'] == null
+        ? null
+        : (json['highRisk'] as num?)?.toDouble();
+    enable = parseAutoInvestBool(json['enable']) ?? true;
+    flag = json['flag']?.toString();
   }
 
   Map<String, dynamic> toJson() {

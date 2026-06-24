@@ -12,8 +12,6 @@ import 'package:Monexo/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flyy_flutter_plugin/flyy_flutter_plugin.dart';
-import 'package:hypersnapsdk_flutter/HVHyperSnapParams.dart';
-import 'package:hypersnapsdk_flutter/HyperSnapSDK.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,7 +46,6 @@ class _MyAppState extends State<MyApp> {
     //initalizing only in the case of non web
     if (!Utils.isWeb) {
       FlySdk.startFlySdkProcess();
-      initHyperSnapSDK();
       AFSdk.initSdk();
     }
 
@@ -59,15 +56,6 @@ class _MyAppState extends State<MyApp> {
   void dispose() {
     super.dispose();
     FlySdk.stopProcess();
-  }
-
-  // HyperSnap Sdk integration
-  void initHyperSnapSDK() async {
-    await HyperSnapSDK.initialize(
-      Constants.hyperVergeAppId,
-      Constants.hyperVergeAppKey,
-      (await HVHyperSnapParams.getValidParams())["RegionIndia"],
-    );
   }
 
   var scrollController = ScrollController();

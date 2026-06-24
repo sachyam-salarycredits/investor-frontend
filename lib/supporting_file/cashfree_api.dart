@@ -6,7 +6,6 @@ import 'package:Monexo/modules/onboardingSteps/screens/web_payment.dart';
 import 'package:Monexo/supporting_file/api_calling.dart';
 import 'package:Monexo/utils/constants.dart';
 import 'package:Monexo/utils/utils.dart';
-import 'package:cashfree_pg/cashfree_pg.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/enums.dart';
@@ -61,75 +60,15 @@ class CashFreeApi {
 
   //MARK:- Make Netbanking payment
   static Future<bool> doNetBankingPayment(CashFreeParams params) async {
-    Map<String, dynamic> inputParams = {
-      "orderId": params.orderID,
-      "orderAmount": params.orderAmount,
-      "customerName": params.customerName,
-      "appId": Constants.cashFreeApiKey,
-      "customerPhone": params.customerPhone,
-      "customerEmail": params.customerEmail,
-      "stage": stage,
-      "tokenData": params.tokenData,
-      "orderNote": "",
-      "orderCurrency": currency,
-      "notifyUrl": notifyUrl,
-      "color1": "#2B3453",
-      "color2": "#FFFFFF",
-
-      // EXTRA THINGS THAT NEEDS TO BE ADDED FOR NETBANKING
-      "paymentOption": "nb",
-      "paymentCode": params.paymentCode,
-    };
-
-    var result = await CashfreePGSDK.doPayment(inputParams);
-    debugPrint('Result ::::' + result.toString());
-    if (result != null) {
-      if (result["txStatus"] == "SUCCESS") {
-        Utils.showToast(msg: result["txMsg"]);
-        return true;
-      } else {
-        Utils.showToast(msg: result["txStatus"]);
-      }
-    } else {
-      Utils.showToast(msg: LanguageHelper.textSomethingWentWrong);
-    }
+    debugPrint('LOCAL MODE: Cashfree native SDK disabled');
+    Utils.showToast(msg: 'Payments disabled in local dev mode');
     return false;
   }
 
   //MARK:- Make UPI Payment
   static Future<bool> doUpiPayment(CashFreeParams params) async {
-    Map<String, dynamic> inputParams = {
-      "orderId": params.orderID,
-      "orderAmount": params.orderAmount,
-      "customerName": params.customerName,
-      "appId": Constants.cashFreeApiKey,
-      "customerPhone": params.customerPhone,
-      "customerEmail": params.customerEmail,
-      "stage": stage,
-      "tokenData": params.tokenData,
-      "orderNote": "",
-      "orderCurrency": currency,
-      "notifyUrl": notifyUrl,
-      "color1": "#2B3453",
-      "color2": "#FFFFFF",
-
-      // EXTRA THINGS THAT NEEDS TO BE ADDED
-      "paymentOption": "upi",
-      "upi_vpa": params.upiID,
-    };
-
-    var result = await CashfreePGSDK.doPayment(inputParams);
-    debugPrint('Result ::::' + result.toString());
-    if (result != null) {
-      if (result["txStatus"] == "SUCCESS") {
-        Utils.showToast(msg: result["txMsg"]);
-        return true;
-      } else {
-        Utils.showToast(msg: result["txStatus"]);
-      }
-    } else {
-      Utils.showToast(msg: LanguageHelper.textSomethingWentWrong);
-    }
+    debugPrint('LOCAL MODE: Cashfree native SDK disabled');
+    Utils.showToast(msg: 'Payments disabled in local dev mode');
     return false;
   }
 }

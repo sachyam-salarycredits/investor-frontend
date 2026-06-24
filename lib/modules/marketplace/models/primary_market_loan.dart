@@ -145,7 +145,7 @@ class LoanOverViewDetail {
 
   factory LoanOverViewDetail.fromJson(Map<String, dynamic> json) {
     return LoanOverViewDetail(
-      totalLoanAmount: json['totalLoanAmount'] ?? 0,
+      totalLoanAmount: (json['totalLoanAmount'] as num?)?.toDouble() ?? 0.0,
       numberOfLoan: json['numberOfLoan'] ?? 0,
     );
   }

@@ -64,6 +64,20 @@
 /// recommended : false
 /// autoInvestmentEnable : true
 
+bool? parseAutoInvestBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is int) return value != 0;
+  if (value is String) {
+    return value == '\x01' ||
+        value == '1' ||
+        value.toLowerCase() == 'true' ||
+        value == 'Y' ||
+        value == 'y';
+  }
+  return null;
+}
+
 class AutoInvestCategoryModel {
   AutoInvestCategoryModel({
     int? id,
@@ -92,8 +106,8 @@ class AutoInvestCategoryModel {
     _conservativeRisk = json['conservativeRisk'];
     _moderateRisk = json['moderateRisk'];
     _highRisk = json['highRisk'];
-    _recommended = json['recommended'];
-    _autoInvestmentEnable = json['autoInvestmentEnable'];
+    _recommended = parseAutoInvestBool(json['recommended']);
+    _autoInvestmentEnable = parseAutoInvestBool(json['autoInvestmentEnable']);
   }
   int? _id;
   int? _amount;

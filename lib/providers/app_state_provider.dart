@@ -691,19 +691,28 @@ class AppStateProvider with ChangeNotifier {
 
       var response = json.decode(bankDetailResp);
       if (response["statusCode"] == "200") {
-        final statusResp = response['data']['paymentTransactionResp']['msgHdr']
-                ['rslt'] ??
-            null;
-        if ((userDetails?.userStage ?? 1) > 3 && statusResp == 'OK') {
+        final data = response['data'] as Map<String, dynamic>?;
+        final paymentTxn =
+            data?['paymentTransactionResp'] as Map<String, dynamic>?;
+        final statusResp = paymentTxn?['msgHdr']?['rslt'];
+        final accountStatusCode = data?['accountStatusCode'];
+        final isValid =
+            statusResp == 'OK' || accountStatusCode == 'ACCOUNT_IS_VALID';
+
+        if ((userDetails?.userStage ?? 1) > 3 && isValid) {
           getStepsStatus();
           getCustomerDetails();
           // notifyListeners();
         }
-        result.isSuccess = statusResp == "OK";
+        result.isSuccess = isValid;
 
-        final code = response['data']['paymentTransactionResp']['msgBdy']
-                ['errorCode'] ??
-            "";
+        if (isValid) {
+          result.message = data?['message'] ??
+              'Bank Account details verified successfully';
+          return result;
+        }
+
+        final code = paymentTxn?['msgBdy']?['errorCode'] ?? "";
         if (code.toString().contains("PAY002") ||
             code.toString().contains("PAY003") ||
             code.toString().contains("PAY005")) {

@@ -17,6 +17,7 @@ buildscript {
 allprojects {
     repositories {
         google()
+        mavenCentral()
         jcenter()
 
      //    Flyy Integration step
@@ -25,14 +26,7 @@ allprojects {
             credentials { username authToken }
         }
 
-        // Hyperverse Sdk step
-        maven {
-			url "s3://hvsdk/android/releases"
-			credentials(AwsCredentials) {
-                accessKey aws_access_key
-                secretKey aws_secret_pass
-            }
-		}
+        // HyperVerge S3 repo removed for local dev (no credentials)
 
         // SFMC integration
         maven {
@@ -50,6 +44,16 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+subprojects { subproject ->
+    subproject.buildscript {
+        configurations.classpath {
+            resolutionStrategy {
+                force "org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10"
+            }
+        }
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
 }

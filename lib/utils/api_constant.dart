@@ -6,7 +6,7 @@ import 'enums.dart';
 class BaseUrls {
   // static const String termsCondition =
   //     'https://docs.google.com/document/d/1G4Dt3YjxFbwOLB5pR6XVyLgVFDGsHvpHKmSe78UlD9g/edit?usp=sharing';
-  static const String devBaseUrl = 'http://10.0.1.90:8081/api/v1/';
+  static const String devBaseUrl = 'https://seclusion-repeater-habitual.ngrok-free.dev/api/v1/';
   static const String prodBaseUrl =
       'https://investor.monexo.co/monexo-service-v1/';
   static const String awsUrl =
@@ -77,7 +77,7 @@ class APIUrls {
   static final checoutSecondaryMarketLoans =
       '${baseURL}secondaryMarketLoanCheckOut';
   static final getSecondaryMarketLoanList =
-      '${baseURL}v2/getSecondaryMarketList/';
+      '${baseURL}v2/getSecondaryMarketList';
   static final getSecondaryMarketLoanDetailByInvestmentId =
       '${baseURL}getInvesmentDetails/';
   static final getRedemptionData = '${baseURL}getRedimptionLoanAmount';
