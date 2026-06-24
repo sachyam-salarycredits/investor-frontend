@@ -1,0 +1,70 @@
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script
+    src="https://hv-camera-web-sg.s3-ap-southeast-1.amazonaws.com/hyperverge-web-sdk@3.3.5/src/sdk.min.js"></script>
+
+</head>
+
+<body>
+  <center>
+    <h2>Hyperverge WebSDK Demo</h2>
+  </center>
+  <div class="container">
+    <div class="form-group">
+      <button type="button" onclick="runOCR();" class="btn btn-primary">Run OCR</button>
+      <button type="button" onclick="runLiveness();" class="btn btn-primary">Run Face Liveness</button>
+    </div>
+    <div id="div1"></div>
+  </div>
+  <script>
+    // client calls the auth api to get the token from their backend server
+    var jwtToken = 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJZCI6IjI0NGFmNSIsImhhc2giOiJmYzkwMjJiMGM5MWRiOGJmYzViMmI5MGZiMjEzYTU4OTUxMDA2OTA3YWY0YmM4ODUzMDk2ODA3OWRlMjRjYTBkIiwiaWF0IjoxNjQyMDc2MzY4LCJleHAiOjE2NDIwOTQzNjgsImp0aSI6IjcxYzgyN2M0LTA1ZWEtNDMzNi1iMmM2LTcwZDc0OTFjZDlhOSJ9.B0fFm9nYz-wB5Cx4uaAhpAZ2jGsIYFIJU7QISSsw9hDRJ5bEJcOKAzhYK9xY8_cNay_TwtV6EAlxuJGHrGBFfCF7vI9kmVIWSSnxci98jAS57KrNivJv1M15aQKELkibcpBMOwkFz3QphhUDEqX9OXkQA3ZJz3DnVi8hC3o8jWY'
+    HyperSnapSDK.init(jwtToken, HyperSnapParams.Region.India);
+    HyperSnapSDK.startUserSession();
+    var faceImage = '';
+    var docImage = '';
+    function runOCR() {
+      hvDocConfig = new HVDocConfig();
+      hvDocConfig.setDocCaptureTitle("Capture Front Of Your Aadhaar Card");
+      type = hvDocConfig.DocumentSide.FRONT;
+
+      hvDocConfig.setOCRDetails(
+        'https://ind-docs.hyperverge.co/v2.0/readKYC',
+        hvDocConfig.DocumentSide.FRONT,
+        {},
+        {},
+      );
+      hvDocConfig.setShouldShowInstructionPage(true);
+      HVDocsModule.start(hvDocConfig, callback);
+    }
+    function runLiveness() {
+      hvFaceConfig = new HVFaceConfig();
+      hvFaceConfig.setShouldShowInstructionPage(true);
+      hvFaceConfig.setLivenessAPIParameters({
+        rejectFaceMask: 'yes',
+        allowEyesClosed: 'no',
+        allowMultipleFaces: 'no',
+      });
+      HVFaceModule.start(hvFaceConfig, callback);
+    }
+    callback = (HVError, HVResponse) => {
+      if (HVError) {
+        var para = document.createElement('p');
+        var node = document.createTextNode(JSON.stringify(HVError));
+        para.appendChild(node);
+        var element = document.getElementById('div1');
+        element.appendChild(para);
+      } else {
+        var para = document.createElement('p');
+        var node = document.createTextNode(JSON.stringify(HVResponse));
+        para.appendChild(node);
+        var element = document.getElementById('div1');
+        element.appendChild(para);
+      }
+    };
+  </script>
+</body>
+
+</html>

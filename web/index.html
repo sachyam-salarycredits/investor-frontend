@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!--
+        If you are serving your web app in a path other than the root, change the
+        href value below to reflect the base path you are serving from.
+
+        The path provided below has to start and end with a slash "/" in order for
+        it to work correctly.
+
+        For more details:
+        * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+        This is a placeholder for base href that will be replaced by the value of
+        the `--base-href` argument provided to `flutter build`.
+      -->
+    <base href="$FLUTTER_BASE_HREF">
+
+
+    <meta charset="UTF-8">
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+    <!-- iOS meta tags & icons -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="monexo">
+    <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png"/>
+
+    <title>monexo</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src="https://hv-camera-web-sg.s3-ap-southeast-1.amazonaws.com/hyperverge-web-sdk@3.3.5/src/sdk.min.js"></script>
+    <script type="text/javascript" src="https://ghc.theflyy.com/assets/flyy-web-sdk-package/v1.0.7/flyy-sdk.js"></script>
+<!--    <script type="text/javascript"-->
+<!--            src="https://ghc.theflyy.com/assets/flyy-web-sdk-package/v1.0.1/flyy-sdk.js"></script>-->
+
+</head>
+
+<body>
+
+
+<script src="app.js"></script>
+
+<script type="text/javascript">
+<!--window.addEventListener('beforeunload', function (e) {-->
+<!--            e.preventDefault();-->
+<!--            e.returnValue = '';-->
+<!--        });-->
+ var cWindow;
+
+
+        function openWin(url) {
+            cWindow = window
+                     .open(url, "_blank", "width=786, height=786");
+
+                            cWindow.addEventListener('load', (event) => {
+       console.log(cWindow.location);
+
+});
+        }
+
+
+        function addEvent(handler){
+
+       cWindow.addEventListener('load', (event) => {
+       console.log(cWindow.location);
+        handler(cWindow.location);
+});
+        }
+
+        function closeWin() {
+            cWindow.close();
+        }
+    let useHtml = false;
+    if(useHtml) {
+      window.flutterWebRenderer = "html";
+    } else {
+      window.flutterWebRenderer = "canvaskit";
+    }
+
+
+
+<!--          function flyWeb()-->
+<!--          {-->
+<!--           console.log('fly web initiated')-->
+<!--           flyySDK.startReferralTracking();-->
+<!--          }-->
+
+
+
+
+
+</script>
+
+
+<script>
+
+    var serviceWorkerVersion = null;
+    var scriptLoaded = false;
+    function loadMainDartJs() {
+      if (scriptLoaded) {
+        return;
+      }
+      scriptLoaded = true;
+      var scriptTag = document.createElement('script');
+      scriptTag.src = 'main.dart.js';
+      scriptTag.type = 'application/javascript';
+      document.body.append(scriptTag);
+    }
+
+    if ('serviceWorker' in navigator) {
+      // Service workers are supported. Use them.
+      window.addEventListener('load', function () {
+        // Wait for registration to finish before dropping the <script> tag.
+        // Otherwise, the browser will load the script multiple times,
+        // potentially different versions.
+        var serviceWorkerUrl = 'flutter_service_worker.js?v=' + serviceWorkerVersion;
+        navigator.serviceWorker.register(serviceWorkerUrl)
+          .then((reg) => {
+            function waitForActivation(serviceWorker) {
+              serviceWorker.addEventListener('statechange', () => {
+                if (serviceWorker.state == 'activated') {
+                  //console.log('Installed new service worker.');
+                  loadMainDartJs();
+                }
+              });
+            }
+            if (!reg.active && (reg.installing || reg.waiting)) {
+              // No active web worker and we have installed or are installing
+              // one for the first time. Simply wait for it to activate.
+              waitForActivation(reg.installing || reg.waiting);
+            } else if (!reg.active.scriptURL.endsWith(serviceWorkerVersion)) {
+              // When the app updates the serviceWorkerVersion changes, so we
+              // need to ask the service worker to update.
+              console.log('New service worker available.');
+              reg.update();
+              waitForActivation(reg.installing);
+            } else {
+              // Existing service worker is still good.
+             // console.log('Loading app from service worker.');
+              loadMainDartJs();
+            }
+          });
+
+        // If service worker doesn't succeed in a reasonable amount of time,
+        // fallback to plaint <script> tag.
+        setTimeout(() => {
+          if (!scriptLoaded) {
+            console.warn(
+              'Failed to load app from service worker. Falling back to plain <script> tag.',
+            );
+            loadMainDartJs();
+          }
+        }, 4000);
+      });
+    } else {
+      // Service workers not supported. Just drop the <script> tag.
+      loadMainDartJs();
+    }
+
+
+
+
+
+</script>
+
+
+</body>
+
+</html>

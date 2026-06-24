@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>519669153883-essurarv7ttm13ugsv27b65vv6u5v8bt.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.519669153883-essurarv7ttm13ugsv27b65vv6u5v8bt</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>519669153883-m8tj7omf2lknp83nbvdb78ckjl0vun6u.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAWP3WL0jxH73fo8vCK1UdsdL-Mx69NY5o</string>
+	<key>GCM_SENDER_ID</key>
+	<string>519669153883</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.monexo.lender</string>
+	<key>PROJECT_ID</key>
+	<string>effective-aria-219606</string>
+	<key>STORAGE_BUCKET</key>
+	<string>effective-aria-219606.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:519669153883:ios:ea4f4d58544e19a9d8bf7e</string>
+	<key>DATABASE_URL</key>
+	<string>https://effective-aria-219606.firebaseio.com</string>
+</dict>
+</plist>

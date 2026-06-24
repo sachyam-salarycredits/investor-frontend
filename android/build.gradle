@@ -1,0 +1,55 @@
+buildscript {
+    ext.kotlin_version = '1.6.10'
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.google.gms:google-services:4.3.14'
+        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'
+
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+
+     //    Flyy Integration step
+        maven {
+            url 'https://jitpack.io'
+            credentials { username authToken }
+        }
+
+        // Hyperverse Sdk step
+        maven {
+			url "s3://hvsdk/android/releases"
+			credentials(AwsCredentials) {
+                accessKey aws_access_key
+                secretKey aws_secret_pass
+            }
+		}
+
+        // SFMC integration
+        maven {
+            url "https://salesforce-marketingcloud.github.io/MarketingCloudSDK-Android/repository"
+        }
+
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
