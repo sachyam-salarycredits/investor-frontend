@@ -55,7 +55,7 @@ dependencies:
   webview_flutter:
   just_audio: ^0.9.20
   shimmer:
-  otp_autofill: ^2.1.0
+  otp_autofill: ^4.1.0
 
 
 
