@@ -8,7 +8,7 @@ class StatementData {
   });
 
   factory StatementData.fromJson(Map<String, dynamic> json) => StatementData(
-        year: json["year"] == null ? "" : json["year"],
+        year: json["year"] == null ? "" : json["year"].toString(),
         statementUrl:
             json["statementUrl"] == null ? null : json["statementUrl"],
       );

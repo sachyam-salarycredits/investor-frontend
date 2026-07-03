@@ -1319,22 +1319,8 @@ class AppStateProvider with ChangeNotifier {
         var value = Map<String, dynamic>();
         value["af_revenue"] = getTotalCartAmount();
         value["af_currency"] = "INR";
-        // AFSdk.logEvent(AFSdk.af_manualFunding, value);
-        //initializing product list for first time
-        //refreshing the data
-        // primaryCartList.forEach((element) {
-        //   element.isAddedToCart = false;
-        //   element.alreadyFunded = true;
-        //   primaryMarketLoans!
-        //       .where((element) => primaryCartList.contains(element))
-        //       .forEach((element) {
-        //     element.alreadyFunded = true;
-        //   });
-        // });
-
-        // checkoutPrimaryCartLoans();
-        //  primaryCartList.clear();
-        //   await getPrimaryMarketLoanList();
+        filterData.pageNo = 0;
+        await _getPrimaryMarketLoanList();
         notifyListeners();
         Future.delayed(Duration(seconds: 5), () {
           Utils.showRatingAlert(context: context);
@@ -1585,7 +1571,7 @@ class AppStateProvider with ChangeNotifier {
   Future<SecondaryMarketLoanDetail?> getSecondaryMarketLoanDetail(
       int index) async {
     var url = APIUrls.getSecondaryMarketLoanDetailByInvestmentId +
-        "?investmentOrderId=${secondaryMarketLoans![index]}";
+        "?investmentOrderId=${secondaryMarketLoans![index].contract}";
 
     print(index);
 

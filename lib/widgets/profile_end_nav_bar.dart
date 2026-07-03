@@ -2053,8 +2053,10 @@ class _NavBarWidgetState extends State<NavBarWidget> {
       padding: EdgeInsets.symmetric(vertical: 0, horizontal: 16.0),
       itemBuilder: (context, index) {
         final statement = provider.statementList[index];
-        final currentYear =
-            (int.parse(statement.year) == 0) ? 0 : int.parse(statement.year);
+        final currentYear = int.tryParse(statement.year.trim()) ?? 0;
+        if (currentYear == 0) {
+          return const SizedBox.shrink();
+        }
         return InkWell(
           onTap: () {
             if (statement.statementUrl != null &&

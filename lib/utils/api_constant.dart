@@ -79,7 +79,7 @@ class APIUrls {
   static final getSecondaryMarketLoanList =
       '${baseURL}v2/getSecondaryMarketList';
   static final getSecondaryMarketLoanDetailByInvestmentId =
-      '${baseURL}getInvesmentDetails/';
+      '${baseURL}getInvesmentDetails';
   static final getRedemptionData = '${baseURL}getRedimptionLoanAmount';
   static final submitRedemptionData = '${baseURL}getRedimptionLoanUpdated';
   static final getStatement = '${baseURL}getStatement';

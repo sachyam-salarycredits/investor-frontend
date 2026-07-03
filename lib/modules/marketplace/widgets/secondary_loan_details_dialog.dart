@@ -55,12 +55,12 @@ class _SecondaryLoanDetailsDialogState
                 ),
               );
 
-              if (snapshot.hasError) {
-                print(snapshot.error);
+              if (snapshot.connectionState != ConnectionState.done) {
+                return loadingDialog;
               }
 
-              if (!snapshot.hasData) {
-                return loadingDialog;
+              if (snapshot.hasError) {
+                print(snapshot.error);
               }
 
               if (snapshot.data == null) {
