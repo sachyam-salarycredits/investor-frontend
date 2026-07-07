@@ -1,8 +1,7 @@
 import 'package:Monexo/language/language_en.dart';
 import 'package:Monexo/providers/app_state_provider.dart';
 import 'package:Monexo/supporting_file/appsFlyerSdk.dart';
-import 'package:Monexo/supporting_file/hyperverge_api.dart';
-import 'package:Monexo/supporting_file/hyperverse_web_sdk.dart';
+import 'package:Monexo/supporting_file/cashfree_kyc_api.dart';
 import 'package:Monexo/supporting_file/api_calling.dart';
 import 'package:Monexo/utils/api_constant.dart';
 import 'package:Monexo/utils/colours_util.dart';
@@ -36,8 +35,7 @@ class AadhaarVerificationScreen extends StatefulWidget {
 class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
   bool isOcrDone = false;
   bool _isLoading = false;
-  HyperVergeData documentUriData =
-      HyperVergeData(frontUri: '', backUri: '', faceDetails: null);
+  CashfreeKycData? cashfreeKycData;
   Map? aadharFrontDetail;
   Map? aadharBackDetail;
   int faceMatchScore = 0;
@@ -63,82 +61,48 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
 
   void submitBtnAction() async {
     if (isOcrDone) {
-      // Other backend steps
       submitAadharDetails();
     } else {
-      if (Utils.isWeb) {
-        setLoading(true);
-        var token = await HyperVergeSession.generateWebTokenHyperverse(context);
-        setLoading(false);
-        init(token ?? "");
-      }
-      startOCRProcess();
+      startCashfreeKycProcess();
     }
   }
 
-  // Start OCR process with Hyperverge sdk
-  void startOCRProcess() async {
-    var docData = await HyperVergeSession.startKYC();
-    if (docData == null) {
-      return;
-    }
-    documentUriData = docData;
-    callFaceMatchApi();
-  }
+  Future<void> startCashfreeKycProcess() async {
+    final front = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (front == null || front.files.single.path == null) return;
+    final back = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (back == null || back.files.single.path == null) return;
+    final selfie = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (selfie == null || selfie.files.single.path == null) return;
 
-  //MARK: Call Face match api to match the selfie with doc photo
-  void callFaceMatchApi() async {
     setLoading(true);
-
-    var matchScore = (Utils.isWeb)
-        ? (await runFaceMatch(documentUriData.faceDetails?.faceUri ?? "",
-            documentUriData.frontUri))
-        : (await HyperVergeSession.callFaceMatchApi(
-            documentUriData.faceDetails?.faceUri, documentUriData.frontUri));
-
-    faceMatchScore = matchScore ?? 0;
-    print('match score aadhar screen ${matchScore}');
+    final result = await CashfreeKycSession.runKycFlow(
+      context,
+      frontPath: front.files.single.path!,
+      backPath: back.files.single.path!,
+      selfiePath: selfie.files.single.path!,
+    );
     setLoading(false);
 
-    // if (matchScore == null || matchScore < 75) {
-    if (matchScore == null || matchScore == 0) {
-      var faceDetails = (Utils.isWeb)
-          ? (await runFaceScanner())
-          : (await HyperVergeSession.openFaceCaptureScreen());
-
-      if (faceDetails == null) {
-        return;
-      }
-      documentUriData.faceDetails = faceDetails;
-      callFaceMatchApi();
-      // Utils.showToast(msg: 'Something went wrong, Please try after sometime.');
-
+    if (result == null) {
+      Utils.showToast(msg: LanguageHelper.textSomethingWentWrong);
       return;
     }
-    callOCRApi(true);
-  }
 
-  //MARK: Call OCR api to get details of document
-  void callOCRApi(isFront) async {
-    setLoading(true);
-    var aadharData = await HyperVergeSession.callOCRApi(
-        (isFront ? documentUriData.frontUri : documentUriData.backUri),
-        isFront);
-    setLoading(false);
+    cashfreeKycData = result;
+    aadharFrontDetail = result.frontFields;
+    aadharBackDetail = result.backFields;
+    faceMatchScore = result.faceMatchScore;
 
-    if (aadharData == null) {
+    if (faceMatchScore == 0) {
+      Utils.showToast(msg: LanguageHelper.textNeedToScanFaceAgain);
       return;
     }
-    if (isFront) {
-      aadharFrontDetail = aadharData;
-      callOCRApi(false);
-    } else {
-      aadharBackDetail = aadharData;
-      setState(() {
-        isOcrDone = true;
-      });
-      submitAadharDetails();
-    }
+
+    setState(() {
+      isOcrDone = true;
+    });
+    submitAadharDetails();
   }
 
   /// Submit Aadhar details
@@ -154,26 +118,25 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
       param[ApiParams.longitute] = "${locationData.longitude ?? 0.0}";
     }
     param[ApiParams.customerId] = (context.read<AppStateProvider>().customerId);
-    param[ApiParams.fullName] = aadharFrontDetail?[HyperVergeSession.name];
-    param[ApiParams.dateOfBirth] = aadharFrontDetail?[HyperVergeSession.dob];
-    param[ApiParams.gender] = aadharFrontDetail?[HyperVergeSession.gender];
+    param[ApiParams.fullName] = aadharFrontDetail?[CashfreeKycSession.name];
+    param[ApiParams.dateOfBirth] = aadharFrontDetail?[CashfreeKycSession.dob];
+    param[ApiParams.gender] = aadharFrontDetail?[CashfreeKycSession.gender];
     param[ApiParams.aadharCardNumber] =
-        aadharFrontDetail?[HyperVergeSession.aadhaar];
-    param[ApiParams.address] = aadharBackDetail?[HyperVergeSession.address];
+        aadharFrontDetail?[CashfreeKycSession.aadhaar];
+    param[ApiParams.address] = aadharBackDetail?[CashfreeKycSession.address];
     param[ApiParams.faceMatch] =
-        documentUriData.faceDetails?.live?.toString() ?? '';
+        (cashfreeKycData?.live ?? false).toString();
     param[ApiParams.faceMatchScore] = faceMatchScore.toString();
-    param[ApiParams.livenessScore] =
-        documentUriData.faceDetails?.livenessScore ?? '';
+    param[ApiParams.livenessScore] = cashfreeKycData?.livenessScore ?? '';
     param[ApiParams.ip] = ip;
     var files = Map<String, PlatformFile>();
 
     files[ApiParams.profileImage] =
-        Utils.getPlatformFile(documentUriData.faceDetails?.faceUri ?? '')!;
+        Utils.getPlatformFile(cashfreeKycData?.selfieUri ?? '')!;
     files[ApiParams.aadharFrontImage] =
-        Utils.getPlatformFile(documentUriData.frontUri)!;
+        Utils.getPlatformFile(cashfreeKycData?.frontUri ?? '')!;
     files[ApiParams.aadharBackImage] =
-        Utils.getPlatformFile(documentUriData.backUri)!;
+        Utils.getPlatformFile(cashfreeKycData?.backUri ?? '')!;
 
     var submitRes =
         await context.read<AppStateProvider>().aadharSubmit(param, files);

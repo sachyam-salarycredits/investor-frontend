@@ -57,6 +57,10 @@ class APIUrls {
   static final getCustomerList = '${baseURL}listOfCustomer?phoneNumber=';
   static final cashfreeWebToken = '${baseURL}cashfreeOrderCreate';
   static final hyperverseToken = '${baseURL}gethyperverse';
+  static final kycAadhaarOcrFront = '${baseURL}kyc/aadhaar/ocr-front';
+  static final kycAadhaarOcrBack = '${baseURL}kyc/aadhaar/ocr-back';
+  static final kycFaceLiveness = '${baseURL}kyc/face/liveness';
+  static final kycFaceMatch = '${baseURL}kyc/face/match';
   static final getUserDetails = '${baseURL}getuserDetails?customerId=';
   static final getSipDetail = '${baseURL}getSipDetailsByCustomerIdAndSourceId';
   static final createSip = '${baseURL}createSip';

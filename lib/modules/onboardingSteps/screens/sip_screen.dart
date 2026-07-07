@@ -238,48 +238,45 @@ class _SIPScreenState extends State<SIPScreen> {
     print(Constants.sipTenure);
 
     if (isUPISelected) {
-      context.pushNamed(RoutesName.UPIScreen1);
-    } else {
-      setLoading(true);
-      final provider = context.read<AppStateProvider>();
-      final userDetail = provider.userDetails;
-      final bankDetails = userDetail?.bankAccountDetails;
-      final ifscCode = bankDetails?.ifscCode ?? '';
-      var param = Map<String, dynamic>();
-      param[ApiParams.customerId] = provider.customerId;
-      param[ApiParams.amountMaximum] =
-          amountController.text.doubleValue().ceil();
-      param[ApiParams.monthDuration] = sliderValue.ceil();
-      param[ApiParams.debtorAccountName] =
-          userDetail?.profileDetails?.fullName ?? '';
-      param[ApiParams.debtorAccountNumber] = bankDetails?.accountNumber ?? '';
-      param[ApiParams.debtorAgentCode] =
-          ifscCode.length > 4 ? ifscCode.substring(0, 4) : '';
-      param[ApiParams.debtorEmail] = userDetail?.profileDetails?.email ?? '';
-      param[ApiParams.authMode] = auth;
-      // isDebitCardSelected ? 'debitcard' : 'netbanking';
-      param[ApiParams.dateValue] = dateController.text;
+      auth = 'upi';
+    }
 
-      print(param);
-      var sipDetail = await provider.createSip(param);
-      setLoading(false);
+    setLoading(true);
+    final provider = context.read<AppStateProvider>();
+    final userDetail = provider.userDetails;
+    final bankDetails = userDetail?.bankAccountDetails;
+    final ifscCode = bankDetails?.ifscCode ?? '';
+    var param = Map<String, dynamic>();
+    param[ApiParams.customerId] = provider.customerId;
+    param[ApiParams.amountMaximum] =
+        amountController.text.doubleValue().ceil();
+    param[ApiParams.monthDuration] = sliderValue.ceil();
+    param[ApiParams.debtorAccountName] =
+        userDetail?.profileDetails?.fullName ?? '';
+    param[ApiParams.debtorAccountNumber] = bankDetails?.accountNumber ?? '';
+    param[ApiParams.debtorAgentCode] =
+        ifscCode.length > 4 ? ifscCode.substring(0, 4) : '';
+    param[ApiParams.debtorEmail] = userDetail?.profileDetails?.email ?? '';
+    param[ApiParams.authMode] = auth;
+    param[ApiParams.dateValue] = dateController.text;
 
-      isSipCreated = true;
-      if (sipDetail != null) {
-        var data = jsonEncode({"url": sipDetail.redirect?.url});
-        if (Utils.isWeb) {
-          //will open in a new dialog instead of tab
+    print(param);
+    var sipDetail = await provider.createSip(param);
+    setLoading(false);
 
-          openWebWindow(sipDetail.redirect?.url ?? "");
-        } else {
-          context.pushNamed(RoutesName.SipWebView, params: {
-            Constants.url: sipDetail.redirect?.url ?? "",
-            Constants.returnUrl: sipDetail.redirect?.returnUrl ?? '',
-            Constants.amount: amountController.text,
-          }, queryParams: {
-            "data": data.base64StringEncodeOriginal()
-          });
-        }
+    isSipCreated = true;
+    if (sipDetail != null) {
+      var data = jsonEncode({"url": sipDetail.redirect?.url});
+      if (Utils.isWeb) {
+        openWebWindow(sipDetail.redirect?.url ?? "");
+      } else {
+        context.pushNamed(RoutesName.SipWebView, params: {
+          Constants.url: sipDetail.redirect?.url ?? "",
+          Constants.returnUrl: sipDetail.redirect?.returnUrl ?? '',
+          Constants.amount: amountController.text,
+        }, queryParams: {
+          "data": data.base64StringEncodeOriginal()
+        });
       }
     }
   }
