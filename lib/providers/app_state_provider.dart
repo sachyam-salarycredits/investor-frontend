@@ -745,9 +745,9 @@ class AppStateProvider with ChangeNotifier {
 
       var response = json.decode(signatoryResp);
       if (response["statusCode"] == "200") {
-        //updating status data
-        getStepsStatus();
-        getCustomerDetails();
+        // checkstatus writes StatusTable; getuserDetails reads enableDialogFiled from it
+        await getStepsStatus();
+        await getCustomerDetails();
         return true;
       }
       if (response['statusCode'] == "204" &&

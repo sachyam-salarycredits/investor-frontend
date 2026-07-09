@@ -61,6 +61,9 @@ class APIUrls {
   static final kycAadhaarOcrBack = '${baseURL}kyc/aadhaar/ocr-back';
   static final kycFaceLiveness = '${baseURL}kyc/face/liveness';
   static final kycFaceMatch = '${baseURL}kyc/face/match';
+  static final kycDigilockerCreateUrl = '${baseURL}kyc/digilocker/create-url';
+  static final kycDigilockerStatus = '${baseURL}kyc/digilocker/status';
+  static final kycDigilockerComplete = '${baseURL}kyc/digilocker/complete';
   static final getUserDetails = '${baseURL}getuserDetails?customerId=';
   static final getSipDetail = '${baseURL}getSipDetailsByCustomerIdAndSourceId';
   static final createSip = '${baseURL}createSip';

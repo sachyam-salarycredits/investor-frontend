@@ -40,12 +40,10 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-
     defaultConfig {
-
         applicationId "com.monexo.lender"
         minSdkVersion 21
-        targetSdk 31
+        targetSdkVersion 34
         multiDexEnabled true
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -83,11 +81,9 @@ flutter {
 }
 
 dependencies {
-
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.android.support:multidex:2.0.1'
     implementation 'com.github.roid-software:flyy-sdk:1.4.37'
-
 
     // SFMC Integration
     implementation("com.salesforce.marketingcloud:marketingcloudsdk:8.0.4")

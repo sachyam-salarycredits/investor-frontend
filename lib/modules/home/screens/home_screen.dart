@@ -83,8 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
     resetOnbaordingScreenStatus();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       setLoader(true);
-      await context.read<AppStateProvider>().getCustomerDetails();
+      // checkstatus first — it writes StatusTable; getuserDetails reads
+      // enableDialogFiled from that table (E-KYC / SIP / MIP banners).
       await context.read<AppStateProvider>().getStepsStatus();
+      await context.read<AppStateProvider>().getCustomerDetails();
       await context.read<AppStateProvider>().getStatement();
       context.read<AppStateProvider>().getFlyyWebToken();
       setLoader(false);

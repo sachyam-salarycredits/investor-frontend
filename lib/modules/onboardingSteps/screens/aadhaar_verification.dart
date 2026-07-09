@@ -2,6 +2,7 @@ import 'package:Monexo/language/language_en.dart';
 import 'package:Monexo/providers/app_state_provider.dart';
 import 'package:Monexo/supporting_file/appsFlyerSdk.dart';
 import 'package:Monexo/supporting_file/cashfree_kyc_api.dart';
+import 'package:Monexo/supporting_file/digilocker_kyc_api.dart';
 import 'package:Monexo/supporting_file/api_calling.dart';
 import 'package:Monexo/utils/api_constant.dart';
 import 'package:Monexo/utils/colours_util.dart';
@@ -63,8 +64,44 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
     if (isOcrDone) {
       submitAadharDetails();
     } else {
-      startCashfreeKycProcess();
+      startDigilockerProcess();
     }
+  }
+
+  /// Primary path: consent-based Aadhaar verification via DigiLocker.
+  Future<void> startDigilockerProcess() async {
+    setLoading(true);
+    final result = await DigilockerKycSession.runFlow(context, ip: ip);
+
+    if (result == null) {
+      setLoading(false);
+      Utils.showToast(
+          msg:
+              'Unable to start DigiLocker verification. Please upload your Aadhaar photos instead.');
+      return;
+    }
+
+    if (!result.success) {
+      setLoading(false);
+      Utils.showToast(
+          msg: result.message.isNotEmpty
+              ? result.message
+              : LanguageHelper.textSomethingWentWrong);
+      return;
+    }
+
+    AFSdk.logEvent(AFSdk.af_ekyc, null);
+    final provider = context.read<AppStateProvider>();
+    await provider.getStepsStatus();
+    await provider.getCustomerDetails();
+    setLoading(false);
+    Utils.showAlert(
+        context: context,
+        msg: LanguageHelper.textEkycDone,
+        onTap: () {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        });
   }
 
   Future<void> startCashfreeKycProcess() async {
@@ -416,7 +453,7 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
             height: 10.0,
           ),
           Text(
-            'If you have your Aadhaar card with you, you can share your details by scanning front and back side of Aadhaar or uploading them.',
+            'Verify your Aadhaar instantly and securely via DigiLocker, or share your details by uploading front and back photos of your Aadhaar card.',
             textAlign: TextAlign.left,
             // maxLines: 3,
             style: TextStyle(
@@ -477,15 +514,35 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen> {
   }
 
   Widget submitButton(context) {
-    return CustomButton(
-      titleStr: getButtonTitle(),
-      onPress: submitBtnAction,
+    return Column(
+      children: [
+        CustomButton(
+          titleStr: getButtonTitle(),
+          onPress: submitBtnAction,
+        ),
+        Visibility(
+          visible: !isOcrDone,
+          child: TextButton(
+            onPressed: startCashfreeKycProcess,
+            child: Text(
+              'Upload Aadhaar photos instead',
+              style: TextStyle(
+                fontFamily: CustomFonts.nunito,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: ColorsUtil.blueColor,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   String getButtonTitle() {
     if (!isOcrDone) {
-      return 'Scan Aadhaar Now';
+      return 'Verify with DigiLocker';
     } else {
       return 'Submit and continue';
     }
