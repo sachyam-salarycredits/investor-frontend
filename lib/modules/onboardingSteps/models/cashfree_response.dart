@@ -22,14 +22,14 @@ class CashFreeResponse {
   String? channel;
   String? action;
   Data? data;
-  int? cfPaymentId;
+  String ? cfPaymentId;
 
   factory CashFreeResponse.fromJson(Map<String, dynamic> json) => CashFreeResponse(
     paymentMethod: json["payment_method"],
     channel: json["channel"],
     action: json["action"],
     data: json["data"]==null?null:Data.fromJson(json["data"]),
-    cfPaymentId: json["cf_payment_id"],
+    cfPaymentId: json["cf_payment_id"]?.toString(),
   );
 
   Map<String, dynamic> toJson() => {

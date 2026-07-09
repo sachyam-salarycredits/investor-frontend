@@ -32,30 +32,42 @@ class PaymentWebScreen extends StatefulWidget {
 
 class _PaymentWebScreenState extends State<PaymentWebScreen> {
   Timer? timer;
+  static const _pollInterval = Duration(seconds: 5);
+
+  late WebViewXController webViewController;
+  var isLoading = ValueNotifier(true);
+  bool onStartResponded = false;
+  bool _paymentResolved = false;
 
   @override
   void initState() {
     if (Utils.isAndroid) WebView.platform = SurfaceAndroidWebView();
     super.initState();
 
+    final orderId = widget.cashFreeResponse.orderId ?? "";
+
     if (Utils.isWeb) {
       isLoading.value = false;
-      timer = Timer.periodic(Duration(seconds: 5), (timer) {
-        getOrderStatus(widget.cashFreeResponse.orderId ?? "", isDelay: false);
-      });
+      _startStatusPolling(orderId);
       openWebWindow(widget.cashFreeResponse.data?.url ?? "");
+    } else {
+      _startStatusPolling(orderId);
     }
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (widget.cashFreeResponse.data!.url.isEmpty) {
-        getOrderStatus(widget.cashFreeResponse.orderId ?? "");
-      }
+  void _startStatusPolling(String orderId) {
+    if (orderId.isEmpty) return;
+    timer?.cancel();
+    getOrderStatus(orderId, isPolling: true);
+    timer = Timer.periodic(_pollInterval, (_) {
+      getOrderStatus(orderId, isPolling: true);
     });
   }
 
-  late WebViewXController webViewController;
-  var isLoading = ValueNotifier(true);
-  bool onStartResponded = false;
+  void _stopPolling() {
+    timer?.cancel();
+    timer = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +118,8 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
                                 print("order id " +
                                     (widget.cashFreeResponse.orderId ?? ""));
                                 getOrderStatus(
-                                    widget.cashFreeResponse.orderId ?? "");
+                                    widget.cashFreeResponse.orderId ?? "",
+                                    isPolling: false);
                               },
                               child: Text("Refresh"));
                         })
@@ -160,7 +173,7 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
                       setState(() {
                         onStartResponded = true;
                       });
-                      getOrderStatus(id);
+                      getOrderStatus(id, isPolling: true);
                     }
                   }
                 },
@@ -170,7 +183,7 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
                     final uri = Uri.dataFromString(url);
                     final id = uri.queryParameters['order_id'];
                     if (id != null && !onStartResponded) {
-                      getOrderStatus(id);
+                      getOrderStatus(id, isPolling: true);
                     }
                   }
                 },
@@ -203,88 +216,101 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
     await pref.setBool('set_registrationStatus', status);
   }
 
-  //for simulating process without backend
-  Future getOrderStatus(String orderId, {bool isDelay = true}) async {
+  Future<void> getOrderStatus(String orderId,
+      {bool isPolling = false}) async {
+    if (_paymentResolved || !mounted || orderId.isEmpty) return;
+
     isLoading.value = true;
-    if (isDelay) await Future.delayed(Duration(seconds: 4));
+    if (!isPolling) {
+      await Future.delayed(const Duration(seconds: 4));
+    }
     final cashFreeResponse =
         await context.read<AppStateProvider>().getCashFreeOrderStatus(orderId);
     isLoading.value = false;
 
-    if (cashFreeResponse != null) {
-      if (cashFreeResponse.orderStatus == "ACTIVE" && !isDelay) {
-        return;
+    if (!mounted || _paymentResolved) return;
+
+    if (cashFreeResponse == null) {
+      if (!isPolling) {
+        _showStatusError();
       }
-
-      //closing browser window
-
-      if (Utils.isWeb) {
-        closeWindow();
-        timer!.cancel();
-      }
-      context.read<AppStateProvider>().getUserFundDetails();
-      context.read<AppStateProvider>().getStepsStatus();
-
-      var value = Map<String, dynamic>();
-      value["af_revenue"] = widget.amount;
-      value["af_currency"] = "INR";
-      // AFSdk.logEvent(AFSdk.af_fundTransfer, value);
-
-      Future.delayed(Duration(seconds: 5), () {
-        Utils.showRatingAlert(context: context);
-      });
-      Utils.showAlert(
-          context: context,
-          msg: cashFreeResponse.txMsg ?? "Payment pending!",
-          onTap: () async {
-            var pref = await SharedPreferences.getInstance();
-            var getRegistrationStatus =
-                await pref.getBool('set_registrationStatus') ?? true;
-            if (getRegistrationStatus) {
-              SetRegistrationStatus(false);
-            }
-            context.pushNamed(RoutesName.FundTransferSuccessScreen, params: {
-              Constants.amount: widget.amount,
-              Constants.cashFreeText: cashFreeResponse.txMsg ?? 'pending'
-            });
-          });
-    } else {
-      if (!isDelay) {
-        Utils.showAlert(
-            context: context,
-            msg: LanguageHelper.textSomethingWentWrong,
-            onTap: () async {
-              var pref = await SharedPreferences.getInstance();
-              var getRegistrationStatus =
-                  await pref.getBool('set_registrationStatus') ?? true;
-              if (getRegistrationStatus) {
-                SetRegistrationStatus(false);
-                context.pushNamed(RoutesName.HomeScreen, queryParams: {
-                  "data": Utils.buildTokenJson(
-                      context.read<AppStateProvider>().token ?? "",
-                      context.read<AppStateProvider>().customerId)
-                });
-              } else {
-                Navigator.pop(context);
-              }
-            });
-      }
+      return;
     }
 
-// if((cashFreeResponse.orderStatus??"")=="SUCCESS")
-// {
-//   return true;
-// }
-//
-// if((cashFreeResponse.orderStatus??"")=="FAILED")
-// {
-//   return false;
-// }
+    final status = (cashFreeResponse.orderStatus ?? '').toUpperCase();
+
+    if (status == 'ACTIVE' || status == 'PENDING') {
+      return;
+    }
+
+    if (status != 'SUCCESS') {
+      _paymentResolved = true;
+      _stopPolling();
+      Utils.showAlert(
+        context: context,
+        msg: cashFreeResponse.txMsg ?? LanguageHelper.textSomethingWentWrong,
+        onTap: () => Navigator.pop(context),
+      );
+      return;
+    }
+
+    _paymentResolved = true;
+    _stopPolling();
+
+    if (Utils.isWeb) {
+      closeWindow();
+    }
+
+    context.read<AppStateProvider>().getUserFundDetails();
+    context.read<AppStateProvider>().getStepsStatus();
+
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        Utils.showRatingAlert(context: context);
+      }
+    });
+    Utils.showAlert(
+        context: context,
+        msg: cashFreeResponse.txMsg ?? LanguageHelper.textFundTransfer,
+        onTap: () async {
+          var pref = await SharedPreferences.getInstance();
+          var getRegistrationStatus =
+              await pref.getBool('set_registrationStatus') ?? true;
+          if (getRegistrationStatus) {
+            SetRegistrationStatus(false);
+          }
+          context.pushNamed(RoutesName.FundTransferSuccessScreen, params: {
+            Constants.amount: widget.amount,
+            Constants.cashFreeText:
+                cashFreeResponse.txMsg ?? LanguageHelper.textFundTransfer
+          });
+        });
+  }
+
+  void _showStatusError() {
+    Utils.showAlert(
+        context: context,
+        msg: LanguageHelper.textSomethingWentWrong,
+        onTap: () async {
+          var pref = await SharedPreferences.getInstance();
+          var getRegistrationStatus =
+              await pref.getBool('set_registrationStatus') ?? true;
+          if (getRegistrationStatus) {
+            SetRegistrationStatus(false);
+            context.pushNamed(RoutesName.HomeScreen, queryParams: {
+              "data": Utils.buildTokenJson(
+                  context.read<AppStateProvider>().token ?? "",
+                  context.read<AppStateProvider>().customerId)
+            });
+          } else {
+            Navigator.pop(context);
+          }
+        });
   }
 
   @override
   void dispose() {
-    if (Utils.isWeb) {}
+    _stopPolling();
     super.dispose();
   }
 }

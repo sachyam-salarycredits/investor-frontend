@@ -21,6 +21,7 @@ class CashFreeOrderResponse {
       this.createDate,
       this.updateDate,
       this.paymentLink,
+      this.paymentSessionId,
       this.orderToken,
       this.txMsg,
       this.bankCode});
@@ -36,15 +37,25 @@ class CashFreeOrderResponse {
   String? createDate;
   String? updateDate;
   String? paymentLink;
+  String? paymentSessionId;
   String? orderToken;
 
-  factory CashFreeOrderResponse.fromJson(Map<String, dynamic> json) =>
-      CashFreeOrderResponse(
+  /// Cashfree PG session id for Order Pay (`/orders/sessions`).
+  String get sessionId =>
+      (paymentSessionId?.isNotEmpty == true
+          ? paymentSessionId
+          : orderToken) ??
+      '';
+
+  factory CashFreeOrderResponse.fromJson(Map<String, dynamic> json) {
+    final session = json["paymentSessionId"] ?? json["orderToken"];
+    return CashFreeOrderResponse(
         orderId: json["orderId"] == null ? null : json["orderId"],
         txMsg: json["txMsg"] == null ? null : json["txMsg"],
         bankCode: json["bankCode"] == null ? null : json["bankCode"],
-        orderAmount:
-            json["orderAmount"] == null ? null : json["orderAmount"].toDouble(),
+        orderAmount: json["orderAmount"] == null
+            ? null
+            : json["orderAmount"].toDouble(),
         orderCurrency:
             json["orderCurrency"] == null ? null : json["orderCurrency"],
         customerId: json["customerId"] == null ? null : json["customerId"],
@@ -53,8 +64,10 @@ class CashFreeOrderResponse {
         createDate: json["createDate"] == null ? null : json["createDate"],
         updateDate: json["updateDate"] == null ? null : json["updateDate"],
         paymentLink: json["paymentLink"] == null ? null : json["paymentLink"],
-        orderToken: json["orderToken"] == null ? null : json["orderToken"],
+        paymentSessionId: session == null ? null : session.toString(),
+        orderToken: session == null ? null : session.toString(),
       );
+  }
 
   Map<String, dynamic> toJson() => {
         "orderId": orderId == null ? null : orderId,
@@ -68,6 +81,7 @@ class CashFreeOrderResponse {
         "createDate": createDate == null ? null : createDate,
         "updateDate": updateDate == null ? null : updateDate,
         "paymentLink": paymentLink,
-        "orderToken": orderToken,
+        "paymentSessionId": paymentSessionId ?? orderToken,
+        "orderToken": orderToken ?? paymentSessionId,
       };
 }

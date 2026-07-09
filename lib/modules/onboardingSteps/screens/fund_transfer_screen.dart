@@ -198,8 +198,9 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
     var params = CashFreeParams(
       orderID: "${response.orderId}",
       orderAmount: "${response.orderAmount ?? 0}",
-      tokenData: response.orderToken ?? "",
-      orderToken: response.orderToken ?? "",
+      tokenData: response.sessionId,
+      paymentSessionId: response.sessionId,
+      orderToken: response.sessionId,
       paymentCode: response.bankCode,
       customerName: userData?.profileDetails?.fullName ?? "",
       customerPhone: userData?.profileDetails?.phoneNumber ?? "",
