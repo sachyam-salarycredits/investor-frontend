@@ -65,6 +65,11 @@ class LanguageHelper {
 
   //fund transfer
   static final textFundTransfer = "Fund Transfer is successful";
+  static final textUpiCollectWaitingTitle =
+      "Approve UPI request on your phone";
+  static final textUpiCollectWaitingBody =
+      "Open PhonePe, Google Pay, Paytm, or your UPI app and approve the payment request. We will confirm automatically once payment is complete.";
+  static final textUpiCollectChecking = "Checking payment status...";
 
   //penny_drop
   static final textBankDetailsUpdated = "Bank details updated";

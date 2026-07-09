@@ -15,7 +15,9 @@ import 'package:webviewx/webviewx.dart';
 
 import '../../../routes_management/routes_list.dart';
 import '../../../supporting_file/appsFlyerSdk.dart';
+import '../../../utils/colours_util.dart';
 import '../../../utils/constants.dart';
+import '../../../utils/fonts.dart';
 
 class PaymentWebScreen extends StatefulWidget {
   final CashFreeResponse cashFreeResponse;
@@ -51,8 +53,94 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
       _startStatusPolling(orderId);
       openWebWindow(widget.cashFreeResponse.data?.url ?? "");
     } else {
+      if (_isUpiCollectWaiting) {
+        isLoading.value = false;
+      }
       _startStatusPolling(orderId);
     }
+  }
+
+  bool get _isUpiCollectWaiting {
+    final data = widget.cashFreeResponse.data;
+    if (data == null || data.url.isNotEmpty) return false;
+    final payload = data.payload;
+    if (payload is Map && payload.entries.isNotEmpty) return false;
+    return true;
+  }
+
+  Widget _buildUpiCollectWaitingUi() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Center(
+        child: ValueListenableBuilder<bool>(
+          valueListenable: isLoading,
+          builder: (context, checking, _) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.mobile_friendly_outlined,
+                  size: 56,
+                  color: ColorsUtil.blueColor,
+                ),
+                const SizedBox(height: 28),
+                Text(
+                  LanguageHelper.textUpiCollectWaitingTitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: CustomFonts.nunito,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  '₹${widget.amount}',
+                  style: TextStyle(
+                    fontFamily: CustomFonts.nunito,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: ColorsUtil.blueColor,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  LanguageHelper.textUpiCollectWaitingBody,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: CustomFonts.nunito,
+                    fontSize: 15,
+                    height: 1.45,
+                    color: ColorsUtil.black.withOpacity(0.72),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                if (checking)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        LanguageHelper.textUpiCollectChecking,
+                        style: TextStyle(
+                          fontFamily: CustomFonts.nunito,
+                          fontSize: 14,
+                          color: ColorsUtil.black.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 
   void _startStatusPolling(String orderId) {
@@ -127,6 +215,10 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
                 ),
               ),
             );
+          }
+
+          if (_isUpiCollectWaiting) {
+            return _buildUpiCollectWaitingUi();
           }
 
           //for upi link method
@@ -271,7 +363,7 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
     });
     Utils.showAlert(
         context: context,
-        msg: cashFreeResponse.txMsg ?? LanguageHelper.textFundTransfer,
+        msg: LanguageHelper.textFundTransfer,
         onTap: () async {
           var pref = await SharedPreferences.getInstance();
           var getRegistrationStatus =
@@ -281,8 +373,7 @@ class _PaymentWebScreenState extends State<PaymentWebScreen> {
           }
           context.pushNamed(RoutesName.FundTransferSuccessScreen, params: {
             Constants.amount: widget.amount,
-            Constants.cashFreeText:
-                cashFreeResponse.txMsg ?? LanguageHelper.textFundTransfer
+            Constants.cashFreeText: LanguageHelper.textFundTransfer
           });
         });
   }
