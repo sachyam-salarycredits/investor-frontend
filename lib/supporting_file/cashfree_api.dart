@@ -193,6 +193,8 @@ class CashFreeApiWeb {
       return;
     }
 
+    // TPV: use collect only for profile-linked UPI; otherwise link/intent so the
+    // payer uses a UPI app tied to the registered bank account on the order.
     final upiId = (params.upiID ?? '').trim();
     final upiChannel = upiId.isNotEmpty ? 'collect' : 'link';
     final upiBody = <String, dynamic>{'channel': upiChannel};

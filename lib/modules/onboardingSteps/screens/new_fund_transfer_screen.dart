@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Monexo/language/language_en.dart';
 import 'package:Monexo/modules/onboardingSteps/models/cashFree_details.dart';
 import 'package:Monexo/modules/onboardingSteps/models/cashfree_web_token_response.dart';
+import 'package:Monexo/modules/profile/models/user_details.dart';
 import 'package:Monexo/providers/app_state_provider.dart';
 import 'package:Monexo/routes_management/routes_list.dart';
 import 'package:Monexo/modules/onboardingSteps/screens/fund_transfer_process_screen.dart';
@@ -24,6 +25,7 @@ import 'package:Monexo/widgets/header.dart';
 import 'package:Monexo/widgets/input_widget.dart';
 import 'package:Monexo/widgets/loader.dart';
 import 'package:Monexo/widgets/title_header.dart';
+import 'package:Monexo/widgets/tpv_registered_bank_banner.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -81,6 +83,7 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
     super.initState();
     amountController.text = '10000';
     _focus.addListener(_onFocusChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncRegisteredUpiFromProfile());
     getFundDetails();
     // getCashFreeToken();
     // final userData = context.read<AppStateProvider>().userDetails;
@@ -141,6 +144,83 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
     return response != null && response.netbankingCode.isNotEmpty;
   }
 
+  BankAccountDetails? get _registeredBank =>
+      context.read<AppStateProvider>().userDetails?.bankAccountDetails;
+
+  bool get _hasRegisteredBankDetails {
+    final bank = _registeredBank;
+    return bank != null &&
+        bank.ifscCode.trim().isNotEmpty &&
+        bank.accountNumber.trim().isNotEmpty;
+  }
+
+  bool get _usesRegisteredUpiCollect =>
+      (_registeredBank?.upiId.trim().isNotEmpty ?? false);
+
+  void _syncRegisteredUpiFromProfile() {
+    final registeredUpi = _registeredBank?.upiId.trim() ?? '';
+    if (registeredUpi.isNotEmpty) {
+      upiController.text = registeredUpi;
+      isUpiValid = registeredUpi.isUpiIdValid;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Widget _tpvBankBanner() {
+    final bank = _registeredBank;
+    if (!_hasRegisteredBankDetails || bank == null) {
+      return const SizedBox.shrink();
+    }
+    return TpvRegisteredBankBanner(
+      bankName: bank.bankName,
+      accountNumber: bank.accountNumber,
+      upiId: bank.upiId.trim().isEmpty ? null : bank.upiId.trim(),
+    );
+  }
+
+  Widget _upiPaymentSection() {
+    if (_usesRegisteredUpiCollect) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 14),
+        child: InputWidget(
+          focusNode: _focus,
+          isFocused: isFocused,
+          isUPI: true,
+          isEditable: false,
+          rightIcon: isUpiValid
+              ? Image(
+                  width: 25,
+                  height: 20,
+                  fit: BoxFit.cover,
+                  image: AssetImage(LocalImages.upi_valid_icon),
+                )
+              : Container(),
+          controller: upiController,
+          keyboardType: TextInputType.emailAddress,
+          isValid: isUpiValid,
+          isError: isUpiError,
+          hintStr: LanguageHelper.textTpvRegisteredUpi,
+          heading: LanguageHelper.textTpvRegisteredUpi,
+          horizontalMargin: 0,
+          onChange: (_) {},
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Text(
+        LanguageHelper.textTpvUpiLinkHint,
+        style: TextStyle(
+          fontFamily: CustomFonts.nunito,
+          fontSize: 13,
+          height: 1.4,
+          color: ColorsUtil.black.withOpacity(0.72),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     iFSCCodeController.dispose();
@@ -157,7 +237,15 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
   }
 
   bool checkValidation() {
-    if (!upiController.text.isUpiIdValid && isUPISelected) {
+    if (!_hasRegisteredBankDetails) {
+      Utils.showAlert(
+          context: context, msg: LanguageHelper.textTpvBankDetailsMissing);
+      return false;
+    }
+
+    if (isUPISelected &&
+        _usesRegisteredUpiCollect &&
+        !upiController.text.isUpiIdValid) {
       setState(() {
         isUpiError = true;
       });
@@ -275,7 +363,8 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
       await CashFreeApiWeb.doNetBankingPayment(
           params, context, amountController.text);
     } else if (isUPISelected) {
-      params.upiID = upiController.text;
+      final registeredUpi = _registeredBank?.upiId.trim() ?? '';
+      params.upiID = registeredUpi.isNotEmpty ? registeredUpi : null;
       params.paymentLink = response.paymentLink;
 
       await CashFreeApiWeb.doUpiPayment(params, context, amountController.text);
@@ -450,6 +539,7 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
                   SizedBox(
                     height: 15.0,
                   ),
+                  _tpvBankBanner(),
                   amountWidget(),
                   SizedBox(
                     height: 10,
@@ -520,35 +610,7 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
 
                   CheckBoxWidget(
                     isUPIBox: true,
-                    UPIWidget: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 14),
-                      child: InputWidget(
-                        focusNode: _focus,
-                        isFocused: isFocused,
-                        isUPI: true,
-                        rightIcon: isUpiValid
-                            ? Image(
-                                width: 25,
-                                height: 20,
-                                fit: BoxFit.cover,
-                                image: AssetImage(LocalImages.upi_valid_icon),
-                              )
-                            : Container(),
-                        controller: upiController,
-                        keyboardType: TextInputType.emailAddress,
-                        isValid: isUpiValid,
-                        isError: isUpiError,
-                        hintStr: 'Enter UPI ID',
-                        heading: 'Enter UPI ID',
-                        horizontalMargin: 0,
-                        onChange: (String input) {
-                          setState(() {
-                            isUpiValid = input.isUpiIdValid;
-                            isUpiError = false;
-                          });
-                        },
-                      ),
-                    ),
+                    UPIWidget: _upiPaymentSection(),
                     titleStr: 'UPI',
                     isSelected: isUPISelected,
                     onPress: () {

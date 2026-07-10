@@ -24,6 +24,8 @@ import 'package:Monexo/widgets/header.dart';
 import 'package:Monexo/widgets/input_widget.dart';
 import 'package:Monexo/widgets/loader.dart';
 import 'package:Monexo/widgets/title_header.dart';
+import 'package:Monexo/widgets/tpv_registered_bank_banner.dart';
+import 'package:Monexo/modules/profile/models/user_details.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:dotted_border/dotted_border.dart';
@@ -75,6 +77,71 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
     iFSCCodeController.text = userData?.bankAccountDetails?.ifscCode ?? '';
     accountNoController.text =
         userData?.bankAccountDetails?.accountNumber ?? '';
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncRegisteredUpiFromProfile());
+  }
+
+  BankAccountDetails? get _registeredBank =>
+      context.read<AppStateProvider>().userDetails?.bankAccountDetails;
+
+  bool get _hasRegisteredBankDetails {
+    final bank = _registeredBank;
+    return bank != null &&
+        bank.ifscCode.trim().isNotEmpty &&
+        bank.accountNumber.trim().isNotEmpty;
+  }
+
+  bool get _usesRegisteredUpiCollect =>
+      (_registeredBank?.upiId.trim().isNotEmpty ?? false);
+
+  void _syncRegisteredUpiFromProfile() {
+    final registeredUpi = _registeredBank?.upiId.trim() ?? '';
+    if (registeredUpi.isNotEmpty) {
+      upiController.text = registeredUpi;
+      isUpiValid = registeredUpi.isUpiIdValid;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Widget _tpvBankBanner() {
+    final bank = _registeredBank;
+    if (!_hasRegisteredBankDetails || bank == null) {
+      return const SizedBox.shrink();
+    }
+    return TpvRegisteredBankBanner(
+      bankName: bank.bankName,
+      accountNumber: bank.accountNumber,
+      upiId: bank.upiId.trim().isEmpty ? null : bank.upiId.trim(),
+    );
+  }
+
+  Widget _upiPaymentSection() {
+    if (_usesRegisteredUpiCollect) {
+      return InputWidget(
+        isUPI: true,
+        isEditable: false,
+        controller: upiController,
+        keyboardType: TextInputType.emailAddress,
+        isValid: isUpiValid,
+        isError: isUpiError,
+        hintStr: LanguageHelper.textTpvRegisteredUpi,
+        heading: LanguageHelper.textTpvRegisteredUpi,
+        horizontalMargin: 0,
+        onChange: (_) {},
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        LanguageHelper.textTpvUpiLinkHint,
+        style: TextStyle(
+          fontFamily: CustomFonts.nunito,
+          fontSize: 13,
+          height: 1.4,
+          color: ColorsUtil.black.withOpacity(0.72),
+        ),
+      ),
+    );
   }
 
   @override
@@ -84,14 +151,22 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
     accountNoController.dispose();
     chequeNoController.dispose();
     amountController.dispose();
+    upiController.dispose();
     super.dispose();
     // Clean up the controller when the widget is disposed.
   }
 
   bool checkValidation() {
-    if (!upiController.text.isUpiIdValid &&
+    if (isOnlineSelected && !_hasRegisteredBankDetails) {
+      Utils.showAlert(
+          context: context, msg: LanguageHelper.textTpvBankDetailsMissing);
+      return false;
+    }
+
+    if (isOnlineSelected &&
         selectedPaymentMode.type == PaymentType.upi &&
-        isOnlineSelected) {
+        _usesRegisteredUpiCollect &&
+        !upiController.text.isUpiIdValid) {
       setState(() {
         isUpiError = true;
       });
@@ -225,7 +300,8 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
 
     setLoading(true);
     if (selectedPaymentMode.type == PaymentType.upi) {
-      params.upiID = upiController.text;
+      final registeredUpi = _registeredBank?.upiId.trim() ?? '';
+      params.upiID = registeredUpi.isNotEmpty ? registeredUpi : null;
       params.paymentLink = response.paymentLink;
 
       await CashFreeApiWeb.doUpiPayment(params, context, amountController.text);
@@ -439,24 +515,8 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                InputWidget(
-                  controller: iFSCCodeController,
-                  horizontalMargin: 0,
-                  heading: 'IFSC Code',
-                  isEditable: false,
-                  titleColor: Colors.grey,
-                  textColor: Colors.grey,
-                ),
-                SizedBox(height: 30),
-                InputWidget(
-                  controller: accountNoController,
-                  horizontalMargin: 0,
-                  heading: 'Account Number',
-                  isEditable: false,
-                  titleColor: Colors.grey,
-                  textColor: Colors.grey,
-                ),
-                SizedBox(height: 30),
+                _tpvBankBanner(),
+                SizedBox(height: 16),
                 Container(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,21 +622,7 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
                   visible: selectedPaymentMode.type == PaymentType.upi,
                   child: Column(
                     children: [
-                      InputWidget(
-                        controller: upiController,
-                        keyboardType: TextInputType.emailAddress,
-                        isValid: isUpiValid,
-                        isError: isUpiError,
-                        hintStr: 'Enter UPI ID',
-                        heading: 'Enter UPI ID',
-                        horizontalMargin: 0,
-                        onChange: (String input) {
-                          setState(() {
-                            isUpiValid = input.isUpiIdValid;
-                            isUpiError = false;
-                          });
-                        },
-                      ),
+                      _upiPaymentSection(),
                       SizedBox(height: 30.0),
                     ],
                   ),

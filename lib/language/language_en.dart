@@ -70,6 +70,14 @@ class LanguageHelper {
   static final textUpiCollectWaitingBody =
       "Open PhonePe, Google Pay, Paytm, or your UPI app and approve the payment request. We will confirm automatically once payment is complete.";
   static final textUpiCollectChecking = "Checking payment status...";
+  static final textTpvRegisteredBankTitle = "Pay only from your registered bank";
+  static final textTpvRegisteredBankBody =
+      "Online payments must be made from the bank account verified on your profile. Payments from other accounts will fail.";
+  static final textTpvRegisteredUpi = "Registered UPI ID";
+  static final textTpvUpiLinkHint =
+      "You will choose your UPI app at checkout. Pay using the UPI linked to your registered bank account.";
+  static final textTpvBankDetailsMissing =
+      "Add and verify your bank account before making an online payment.";
 
   //penny_drop
   static final textBankDetailsUpdated = "Bank details updated";

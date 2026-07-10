@@ -94,6 +94,7 @@ class BankAccountDetails {
   String micrCode;
   String accountType;
   String address;
+  String upiId;
 
   BankAccountDetails({
     this.accountNumber = "12989898989980",
@@ -103,6 +104,7 @@ class BankAccountDetails {
     this.micrCode = "",
     this.accountType = "",
     this.address = "",
+    this.upiId = "",
   });
 
   factory BankAccountDetails.getDummyModel() => BankAccountDetails();
@@ -116,6 +118,7 @@ class BankAccountDetails {
       branchName: json['branchName'] ?? "",
       ifscCode: json['ifscCode'] ?? "",
       micrCode: json['micrCode'] ?? "",
+      upiId: json['upiId'] ?? "",
     );
   }
 
@@ -128,6 +131,7 @@ class BankAccountDetails {
     data['branchName'] = this.branchName;
     data['ifscCode'] = this.ifscCode;
     data['micrCode'] = this.micrCode;
+    data['upiId'] = this.upiId;
     data['accountType'] = this.accountType;
     data['address'] = this.address;
     return data;
