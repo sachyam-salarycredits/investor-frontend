@@ -105,6 +105,42 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
     setState(() {});
   }
 
+  bool get _isNetBanking => isNetBankingSelected;
+
+  PaymentOptions get _netBankingOption => CashFreeApiWeb.paymentTypes
+      .firstWhere((option) => option.type == PaymentType.netBanking);
+
+  void _selectUpi() {
+    setState(() {
+      isUPISelected = true;
+      isNetBankingSelected = false;
+      selectedPaymentMode = CashFreeApiWeb.paymentTypes.first;
+      isBankCodeAvailable = true;
+      isAmountError = false;
+      isAmountValid = false;
+    });
+  }
+
+  void _selectNetBanking() {
+    setState(() {
+      isNetBankingSelected = true;
+      isUPISelected = false;
+      selectedPaymentMode = _netBankingOption;
+      isBankCodeAvailable = true;
+      isAmountError = false;
+      isAmountValid = false;
+    });
+  }
+
+  int _orderAmountForCreate() {
+    final amount = int.parse(amountController.text);
+    return _isNetBanking ? amount + netBankingCharge : amount;
+  }
+
+  bool _hasValidNetbankingCode(CashFreeOrderResponse? response) {
+    return response != null && response.netbankingCode.isNotEmpty;
+  }
+
   @override
   void dispose() {
     iFSCCodeController.dispose();
@@ -178,9 +214,7 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
 
     var ip = await Utils.getIpAddress();
     param = {
-      "order_amount": selectedPaymentMode.type == PaymentType.netBanking
-          ? "${(int.parse(amountController.text) + netBankingCharge)}"
-          : amountController.text,
+      "order_amount": "${_orderAmountForCreate()}",
       "order_currency": "INR",
       "ifscCode": userDetails?.bankAccountDetails?.ifscCode ?? "",
       "ip": ip,
@@ -194,7 +228,18 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
         await context.read<AppStateProvider>().getCashFreeTokenWeb(param);
     setLoading(false);
 
-    if (cashFreeDataWeb?.bankCode == null || cashFreeDataWeb?.bankCode == '') {
+    if (_isNetBanking) {
+      if (!_hasValidNetbankingCode(cashFreeDataWeb)) {
+        setState(() {
+          isBankCodeAvailable = false;
+        });
+        Utils.showAlert(
+            context: context,
+            msg: cashFreeDataWeb?.txMsg ?? LanguageHelper.textNetBankingUnavailable);
+        return;
+      }
+    } else if (cashFreeDataWeb?.bankCode == null ||
+        cashFreeDataWeb?.bankCode == '') {
       setState(() {
         isBankCodeAvailable = false;
       });
@@ -212,27 +257,28 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
     final userData = context.read<AppStateProvider>().userDetails;
     orderId = "${response.orderId}";
     print("bankCode :${response.bankCode}");
+    print("netbankingBankCode :${response.netbankingBankCode}");
     var params = CashFreeParams(
       orderID: "${response.orderId}",
       orderAmount: "${response.orderAmount ?? 0}",
       tokenData: response.sessionId,
       paymentSessionId: response.sessionId,
       orderToken: response.sessionId,
-      paymentCode: response.bankCode,
+      paymentCode: _isNetBanking ? response.netbankingCode : response.bankCode,
       customerName: userData?.profileDetails?.fullName ?? "",
       customerPhone: userData?.profileDetails?.phoneNumber ?? "",
       customerEmail: userData?.profileDetails?.email ?? "",
     );
 
     setLoading(true);
-    if (isUPISelected) {
+    if (_isNetBanking) {
+      await CashFreeApiWeb.doNetBankingPayment(
+          params, context, amountController.text);
+    } else if (isUPISelected) {
       params.upiID = upiController.text;
       params.paymentLink = response.paymentLink;
 
       await CashFreeApiWeb.doUpiPayment(params, context, amountController.text);
-    } else {
-      await CashFreeApiWeb.doNetBankingPayment(
-          params, context, amountController.text);
     }
     // if (selectedPaymentMode.type == PaymentType.upi) {
     //   params.upiID = upiController.text;
@@ -506,27 +552,30 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
                     titleStr: 'UPI',
                     isSelected: isUPISelected,
                     onPress: () {
-                      setState(() {
-                        isUPISelected = !isUPISelected;
-                        // isChequeSelected = false;
-                        isNetBankingSelected = false;
-                        // amountController.text = '';
-                        isAmountError = false;
-                        isAmountValid = false;
-                      });
+                      if (isUPISelected) {
+                        setState(() {
+                          isUPISelected = false;
+                          isAmountError = false;
+                          isAmountValid = false;
+                        });
+                      } else {
+                        _selectUpi();
+                      }
                     },
                   ),
                   CheckBoxWidget(
                     titleStr: 'Net Banking',
                     isSelected: isNetBankingSelected,
                     onPress: () {
-                      setState(() {
-                        isNetBankingSelected = !isNetBankingSelected;
-                        isUPISelected = false;
-                        // amountController.text = '';
-                        isAmountError = false;
-                        isAmountValid = false;
-                      });
+                      if (isNetBankingSelected) {
+                        setState(() {
+                          isNetBankingSelected = false;
+                          isAmountError = false;
+                          isAmountValid = false;
+                        });
+                      } else {
+                        _selectNetBanking();
+                      }
                     },
                   ),
                   // CheckBoxWidget(
@@ -698,7 +747,8 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
                 titleStr: 'Deposit Money',
                 horizontalMargin: 0,
                 isDisable: (!isUPISelected && !isNetBankingSelected) ||
-                    (!isBankCodeAvailable && isUPISelected),
+                    (!isBankCodeAvailable &&
+                        (isUPISelected || isNetBankingSelected)),
                 onPress: makePayment,
               ),
               SizedBox(
@@ -733,10 +783,7 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
       keyboardType: TextInputType.number,
       isValid: isAmountValid,
       alertColor: Colors.red,
-      alertStr:
-          (selectedPaymentMode.type == PaymentType.netBanking && isUPISelected)
-              ? "${LanguageHelper.textNetBankingCharge}"
-              : "",
+      alertStr: isNetBankingSelected ? LanguageHelper.textNetBankingCharge : "",
       isError: isAmountError,
       hintStr: 'Enter Amount',
       heading: 'Enter Amount',

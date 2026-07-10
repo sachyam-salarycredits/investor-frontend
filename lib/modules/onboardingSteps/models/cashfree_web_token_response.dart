@@ -24,10 +24,12 @@ class CashFreeOrderResponse {
       this.paymentSessionId,
       this.orderToken,
       this.txMsg,
-      this.bankCode});
+      this.bankCode,
+      this.netbankingBankCode});
 
   String? txMsg;
   String? bankCode;
+  String? netbankingBankCode;
   String? orderId;
   double? orderAmount;
   String? orderCurrency;
@@ -47,12 +49,28 @@ class CashFreeOrderResponse {
           : orderToken) ??
       '';
 
+  /// Numeric Cashfree code for net banking `/orders/sessions`.
+  String get netbankingCode {
+    final nb = netbankingBankCode?.trim();
+    if (nb != null && nb.isNotEmpty && int.tryParse(nb) != null) {
+      return nb;
+    }
+    final legacy = bankCode?.trim();
+    if (legacy != null && legacy.isNotEmpty && int.tryParse(legacy) != null) {
+      return legacy;
+    }
+    return '';
+  }
+
   factory CashFreeOrderResponse.fromJson(Map<String, dynamic> json) {
     final session = json["paymentSessionId"] ?? json["orderToken"];
     return CashFreeOrderResponse(
         orderId: json["orderId"] == null ? null : json["orderId"],
         txMsg: json["txMsg"] == null ? null : json["txMsg"],
-        bankCode: json["bankCode"] == null ? null : json["bankCode"],
+        bankCode: json["bankCode"] == null ? null : json["bankCode"].toString(),
+        netbankingBankCode: json["netbankingBankCode"] == null
+            ? null
+            : json["netbankingBankCode"].toString(),
         orderAmount: json["orderAmount"] == null
             ? null
             : json["orderAmount"].toDouble(),
@@ -73,6 +91,7 @@ class CashFreeOrderResponse {
         "orderId": orderId == null ? null : orderId,
         "txMsg": txMsg == null ? null : txMsg,
         "bankCode": bankCode == null ? null : bankCode,
+        "netbankingBankCode": netbankingBankCode,
         "orderAmount": orderAmount == null ? null : orderAmount,
         "orderCurrency": orderCurrency == null ? null : orderCurrency,
         "customerId": customerId == null ? null : customerId,

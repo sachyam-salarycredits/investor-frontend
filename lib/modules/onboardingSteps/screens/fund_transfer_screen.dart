@@ -177,7 +177,20 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
         await context.read<AppStateProvider>().getCashFreeTokenWeb(param);
     setLoading(false);
 
-    if (cashFreeDataWeb?.bankCode == null || cashFreeDataWeb?.bankCode == '') {
+    if (selectedPaymentMode.type == PaymentType.netBanking) {
+      if (cashFreeDataWeb == null ||
+          cashFreeDataWeb.netbankingCode.isEmpty) {
+        setState(() {
+          isBankCodeAvailable = false;
+        });
+        Utils.showAlert(
+            context: context,
+            msg: cashFreeDataWeb?.txMsg ??
+                LanguageHelper.textNetBankingUnavailable);
+        return;
+      }
+    } else if (cashFreeDataWeb?.bankCode == null ||
+        cashFreeDataWeb?.bankCode == '') {
       setState(() {
         isBankCodeAvailable = false;
       });
@@ -195,13 +208,16 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
     final userData = context.read<AppStateProvider>().userDetails;
     orderId = "${response.orderId}";
     print("bankCode :${response.bankCode}");
+    print("netbankingBankCode :${response.netbankingBankCode}");
     var params = CashFreeParams(
       orderID: "${response.orderId}",
       orderAmount: "${response.orderAmount ?? 0}",
       tokenData: response.sessionId,
       paymentSessionId: response.sessionId,
       orderToken: response.sessionId,
-      paymentCode: response.bankCode,
+      paymentCode: selectedPaymentMode.type == PaymentType.netBanking
+          ? response.netbankingCode
+          : response.bankCode,
       customerName: userData?.profileDetails?.fullName ?? "",
       customerPhone: userData?.profileDetails?.phoneNumber ?? "",
       customerEmail: userData?.profileDetails?.email ?? "",
@@ -505,6 +521,7 @@ class _FundTransferScreenState extends State<FundTransferScreen> {
                         onChanged: (newValue) {
                           setState(() {
                             selectedPaymentMode = newValue as PaymentOptions;
+                            isBankCodeAvailable = true;
                           });
                         },
                         hint: Container(

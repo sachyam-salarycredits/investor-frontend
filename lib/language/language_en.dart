@@ -83,7 +83,9 @@ class LanguageHelper {
   static final textNoLoans = "You don't have any loans to redeem.";
   static final redeemMaxLoan = "You can't redeem more than 20 loans at a time";
   static final textNetBankingCharge =
-      "You will be charged ₹ 15 per transaction";
+      "A charge of Rs. 15 will be applicable for Net Banking. You will be charged ₹ 15 per transaction";
+  static final textNetBankingUnavailable =
+      "Net banking is not available for your bank. Please use UPI or cheque deposit.";
 
   static var textLocationRequired = "Location Permission is required";
 }

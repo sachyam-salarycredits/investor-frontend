@@ -158,7 +158,13 @@ class CashFreeApiWeb {
       return;
     }
 
-    final bankCode = int.tryParse(params.paymentCode ?? '0') ?? 0;
+    final bankCode = int.tryParse(params.paymentCode ?? '') ?? 0;
+    if (bankCode <= 0) {
+      Utils.showAlert(
+          context: context, msg: LanguageHelper.textNetBankingUnavailable);
+      return;
+    }
+
     final body = {
       'payment_session_id': sessionId,
       'payment_method': {
