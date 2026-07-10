@@ -1,6 +1,10 @@
 import 'dart:async';
 
+import 'package:Monexo/providers/app_state_provider.dart';
+import 'package:Monexo/routes_management/routes_list.dart';
+import 'package:Monexo/utils/api_constant.dart';
 import 'package:Monexo/utils/colours_util.dart';
+import 'package:Monexo/utils/constants.dart';
 import 'package:Monexo/utils/fonts.dart';
 import 'package:Monexo/utils/responsive.dart';
 import 'package:Monexo/widgets/custom_button.dart';
@@ -9,6 +13,7 @@ import 'package:Monexo/widgets/loader.dart';
 import 'package:Monexo/widgets/title_header.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../utils/images.dart';
 
@@ -32,12 +37,27 @@ class _UPIScreenThirdState extends State<UPIScreenThird> {
   var upiController = TextEditingController();
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     mytimer = Timer.periodic(Duration(seconds: 10), (timer) {
-      print('hello');
-      //code to run on every 10 seconds
+      _pollMandateStatus();
     });
+  }
+
+  Future<void> _pollMandateStatus() async {
+    final provider = context.read<AppStateProvider>();
+    await provider.checkSipUpiMandateStatus({
+      ApiParams.customerId: provider.customerId,
+    });
+    final sip = await provider.getPreviousSip();
+    if (sip?.sipEnable == true) {
+      mytimer?.cancel();
+      if (!mounted) return;
+      await provider.getCustomerDetails();
+      context.pushNamed(
+        RoutesName.UPISuccessScreen,
+        params: {Constants.paymentMethod: 'UPI E-Nach'},
+      );
+    }
   }
 
   @override
@@ -219,7 +239,10 @@ class _UPIScreenThirdState extends State<UPIScreenThird> {
               ),
               CustomButton(
                 titleStr: 'Go Back',
-                onPress: () {},
+                onPress: () {
+                  mytimer?.cancel();
+                  context.pop();
+                },
               ),
               SizedBox(
                 height: 25,

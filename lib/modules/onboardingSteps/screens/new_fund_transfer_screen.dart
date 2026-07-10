@@ -207,18 +207,48 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Text(
-        LanguageHelper.textTpvUpiLinkHint,
-        style: TextStyle(
-          fontFamily: CustomFonts.nunito,
-          fontSize: 13,
-          height: 1.4,
-          color: ColorsUtil.black.withOpacity(0.72),
-        ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14),
+      child: InputWidget(
+        focusNode: _focus,
+        isFocused: isFocused,
+        isUPI: true,
+        controller: upiController,
+        keyboardType: TextInputType.emailAddress,
+        isValid: isUpiValid,
+        isError: isUpiError,
+        alertStr: isUpiError ? LanguageHelper.textInvalidUpiId : '',
+        hintStr: LanguageHelper.textEnterUpiId,
+        heading: LanguageHelper.textEnterUpiLinkedToBank,
+        horizontalMargin: 0,
+        onChange: (String input) {
+          setState(() {
+            isUpiValid = input.trim().isUpiIdValid;
+            isUpiError = input.trim().isNotEmpty && !isUpiValid;
+          });
+        },
       ),
     );
+  }
+
+  String _effectiveUpiId() {
+    final entered = upiController.text.trim();
+    if (entered.isNotEmpty) {
+      return entered;
+    }
+    return _registeredBank?.upiId.trim() ?? '';
+  }
+
+  Future<bool> _persistUpiIfNeeded() async {
+    final upi = upiController.text.trim();
+    if (!upi.isUpiIdValid) {
+      return false;
+    }
+    final profileUpi = _registeredBank?.upiId.trim() ?? '';
+    if (upi == profileUpi) {
+      return true;
+    }
+    return context.read<AppStateProvider>().saveProfileUpi(upi);
   }
 
   @override
@@ -243,9 +273,7 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
       return false;
     }
 
-    if (isUPISelected &&
-        _usesRegisteredUpiCollect &&
-        !upiController.text.isUpiIdValid) {
+    if (isUPISelected && !_effectiveUpiId().isUpiIdValid) {
       setState(() {
         isUpiError = true;
       });
@@ -294,6 +322,14 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
 
   /// Get CashFree token and bankCode
   Future<void> getCashFreeToken() async {
+    if (isUPISelected) {
+      final saved = await _persistUpiIfNeeded();
+      if (!saved) {
+        Utils.showAlert(context: context, msg: LanguageHelper.textInvalidUpiId);
+        return;
+      }
+    }
+
     var customerId = context.read<AppStateProvider>().customerId;
     var userDetails = context.read<AppStateProvider>().userDetails;
     var param = Map<String, dynamic>();
@@ -363,21 +399,12 @@ class _NewFundTransferScreenState extends State<NewFundTransferScreen> {
       await CashFreeApiWeb.doNetBankingPayment(
           params, context, amountController.text);
     } else if (isUPISelected) {
-      final registeredUpi = _registeredBank?.upiId.trim() ?? '';
-      params.upiID = registeredUpi.isNotEmpty ? registeredUpi : null;
+      final upi = _effectiveUpiId();
+      params.upiID = upi.isNotEmpty ? upi : null;
       params.paymentLink = response.paymentLink;
 
       await CashFreeApiWeb.doUpiPayment(params, context, amountController.text);
     }
-    // if (selectedPaymentMode.type == PaymentType.upi) {
-    //   params.upiID = upiController.text;
-    //   params.paymentLink = response.paymentLink;
-    //
-    //   await CashFreeApiWeb.doUpiPayment(params, context, amountController.text);
-    // } else {
-    //   await CashFreeApiWeb.doNetBankingPayment(
-    //       params, context, amountController.text);
-    // }
 
     setLoading(false);
   }

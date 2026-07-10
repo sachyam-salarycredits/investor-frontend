@@ -575,6 +575,32 @@ class AppStateProvider with ChangeNotifier {
     }
   }
 
+  /// Persist profile UPI on bank_details_save (full bank row + upiId).
+  Future<bool> saveProfileUpi(String upiId) async {
+    final trimmed = upiId.trim();
+    if (trimmed.isEmpty || customerId.isEmpty) {
+      return false;
+    }
+    final bank = userDetails?.bankAccountDetails;
+    if (bank == null) {
+      return false;
+    }
+    final ok = await saveBankDetails({
+      ApiParams.customerId: customerId,
+      ApiParams.acountHolderName: userDetails?.profileDetails?.fullName ?? '',
+      ApiParams.accountNumber: bank.accountNumber,
+      ApiParams.ifscCode: bank.ifscCode,
+      ApiParams.bankName: bank.bankName,
+      ApiParams.branchName: bank.branchName,
+      ApiParams.accountType: bank.accountType,
+      ApiParams.upiId: trimmed,
+    });
+    if (ok) {
+      await getCustomerDetails();
+    }
+    return ok;
+  }
+
   /// Get CashFreeToken api
   Future<bool> saveBankDetails(param) async {
     try {
@@ -910,8 +936,8 @@ class AppStateProvider with ChangeNotifier {
     return null;
   }
 
-  /// Get SIP Details
-  Future<SipDetails?> createSip(param) async {
+  /// Create SIP mandate via Cashfree.
+  Future<SipCreateResult> createSip(param) async {
     try {
       var url = APIUrls.createSip;
 
@@ -919,13 +945,53 @@ class AppStateProvider with ChangeNotifier {
           url: url, parameters: param, headers: null);
 
       var response = json.decode(cidListResp);
-      if (response["statusCode"] == "200") {
-        return SipDetails.fromJson(response['data']);
+      if (response["statusCode"] == "200" && response['data'] != null) {
+        return SipCreateResult(sip: SipDetails.fromJson(response['data']));
       }
-      return null;
+      final message = response["message"]?.toString();
+      if (message != null && message.isNotEmpty) {
+        return SipCreateResult(errorMessage: message);
+      }
+      return SipCreateResult();
     } catch (e) {
       print(e);
-      return null;
+      return SipCreateResult();
+    }
+  }
+
+  /// IDFC UPI: validate VPA for SIP mandate.
+  Future<bool> validateSipUpiMandate(Map<String, dynamic> param) async {
+    try {
+      var resp = await apiCalling.postRequest(
+          url: APIUrls.validateMandate, parameters: param, headers: null);
+      var response = json.decode(resp);
+      return response["statusCode"] == "200";
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  /// IDFC UPI: create e-mandate after VPA validation.
+  Future<bool> createSipUpiMandate(Map<String, dynamic> param) async {
+    try {
+      var resp = await apiCalling.postRequest(
+          url: APIUrls.createMandate, parameters: param, headers: null);
+      var response = json.decode(resp);
+      return response["statusCode"] == "200";
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  /// Poll IDFC mandate status (fire-and-forget on backend).
+  Future<void> checkSipUpiMandateStatus(Map<String, dynamic> param) async {
+    try {
+      await apiCalling.postRequest(
+          url: APIUrls.checkMandateStatus, parameters: param, headers: null);
+    } catch (e) {
+      print(e);
     }
   }
 

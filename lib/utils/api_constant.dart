@@ -67,6 +67,9 @@ class APIUrls {
   static final getUserDetails = '${baseURL}getuserDetails?customerId=';
   static final getSipDetail = '${baseURL}getSipDetailsByCustomerIdAndSourceId';
   static final createSip = '${baseURL}createSip';
+  static final validateMandate = '${baseURL}validateMandate';
+  static final createMandate = '${baseURL}createMandate';
+  static final checkMandateStatus = '${baseURL}checkMandateStatus';
   static final stepsStatus = '${baseURL}v2/checkstatus?customerId=';
   static final downloadFileUrl = '${baseURL}downloadFileUrl';
   static final uploadFileDetails = '${baseURL}uploadFileDetails';
@@ -239,6 +242,8 @@ class ApiParams {
   static final debtorEmail = 'debtor_email';
   static final authMode = 'auth_mode';
   static final dateValue = 'presdatevalue';
+  static final custVirAdd = 'custVirAdd';
+  static final presDate = 'presDate';
 
   /// Address Detail
   static final doorNo = 'doorNo';

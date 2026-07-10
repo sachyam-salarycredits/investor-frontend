@@ -74,6 +74,10 @@ class LanguageHelper {
   static final textTpvRegisteredBankBody =
       "Online payments must be made from the bank account verified on your profile. Payments from other accounts will fail.";
   static final textTpvRegisteredUpi = "Registered UPI ID";
+  static final textEnterUpiId = "Enter UPI ID";
+  static final textEnterUpiLinkedToBank =
+      "Enter the UPI ID linked to your registered bank account.";
+  static final textInvalidUpiId = "Please enter a valid UPI ID";
   static final textTpvUpiLinkHint =
       "You will choose your UPI app at checkout. Pay using the UPI linked to your registered bank account.";
   static final textTpvBankDetailsMissing =

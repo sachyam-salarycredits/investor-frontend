@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:Monexo/language/language_en.dart';
 import 'package:Monexo/modules/onboardingSteps/models/BankDetailSIPModel.dart';
 import 'package:Monexo/modules/onboardingSteps/models/sip_details.dart';
+import 'package:Monexo/modules/profile/models/user_details.dart';
 import 'package:Monexo/providers/app_state_provider.dart';
 import 'package:Monexo/routes_management/app_router.dart';
 import 'package:Monexo/routes_management/routes_list.dart';
@@ -21,6 +22,7 @@ import 'package:Monexo/widgets/input_widget.dart';
 import 'package:Monexo/widgets/loader.dart';
 import 'package:Monexo/widgets/otp_verification.dart';
 import 'package:Monexo/widgets/title_header.dart';
+import 'package:Monexo/widgets/tpv_registered_bank_banner.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_switch/flutter_switch.dart';
@@ -106,6 +108,7 @@ class _SIPScreenState extends State<SIPScreen> {
   bool isUpiValid = false;
   bool isUpiError = false;
   bool isUPISelected = false;
+  var upiController = TextEditingController();
   var dateController = TextEditingController();
   String datetError = "";
   bool isDateError = false;
@@ -117,16 +120,18 @@ class _SIPScreenState extends State<SIPScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     getOptionVisibility();
     getOldSipDetail();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncRegisteredUpiFromProfile());
   }
 
   @override
   void dispose() {
     amountController.dispose();
     dateController.dispose();
+    upiController.dispose();
+    _focus.dispose();
 
     super.dispose();
     // Clean up the controller when the widget is disposed.
@@ -211,6 +216,74 @@ class _SIPScreenState extends State<SIPScreen> {
     return true;
   }
 
+  BankAccountDetails? get _registeredBank =>
+      context.read<AppStateProvider>().userDetails?.bankAccountDetails;
+
+  bool get _usesRegisteredUpiCollect =>
+      (_registeredBank?.upiId.trim().isNotEmpty ?? false);
+
+  void _syncRegisteredUpiFromProfile() {
+    final registeredUpi = _registeredBank?.upiId.trim() ?? '';
+    if (registeredUpi.isNotEmpty) {
+      upiController.text = registeredUpi;
+      isUpiValid = registeredUpi.isUpiIdValid;
+      if (mounted) setState(() {});
+    }
+  }
+
+  String _effectiveUpiId() {
+    final entered = upiController.text.trim();
+    if (entered.isNotEmpty) {
+      return entered;
+    }
+    return _registeredBank?.upiId.trim() ?? '';
+  }
+
+  Future<bool> _persistUpiIfNeeded(AppStateProvider provider) async {
+    final upi = upiController.text.trim();
+    if (!upi.isUpiIdValid) {
+      return false;
+    }
+    final profileUpi = _registeredBank?.upiId.trim() ?? '';
+    if (upi == profileUpi) {
+      return true;
+    }
+    return provider.saveProfileUpi(upi);
+  }
+
+  Widget _upiInputSection() {
+    final hasRegisteredUpi = _usesRegisteredUpiCollect;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: InputWidget(
+        focusNode: _focus,
+        isFocused: isFocused,
+        isUPI: true,
+        isEditable: !hasRegisteredUpi,
+        controller: upiController,
+        keyboardType: TextInputType.emailAddress,
+        isValid: isUpiValid,
+        isError: isUpiError,
+        alertStr: isUpiError ? LanguageHelper.textInvalidUpiId : '',
+        hintStr: hasRegisteredUpi
+            ? LanguageHelper.textTpvRegisteredUpi
+            : LanguageHelper.textEnterUpiId,
+        heading: hasRegisteredUpi
+            ? LanguageHelper.textTpvRegisteredUpi
+            : LanguageHelper.textEnterUpiLinkedToBank,
+        horizontalMargin: 0,
+        onChange: hasRegisteredUpi
+            ? (_) {}
+            : (String input) {
+                setState(() {
+                  isUpiValid = input.trim().isUpiIdValid;
+                  isUpiError = input.trim().isNotEmpty && !isUpiValid;
+                });
+              },
+      ),
+    );
+  }
+
   /// Check validation
   bool checkValidation() {
     if (!(checkAmountValidation() && checkDateValidation())) {
@@ -221,10 +294,40 @@ class _SIPScreenState extends State<SIPScreen> {
       Utils.showAlert(context: context, msg: LanguageHelper.textSelectOption);
       return false;
     }
+    if (isUPISelected && !_effectiveUpiId().isUpiIdValid) {
+      setState(() {
+        isUpiError = true;
+      });
+      Utils.showAlert(context: context, msg: LanguageHelper.textInvalidUpiId);
+      return false;
+    }
     return true;
   }
 
   /// Create SIP
+  static const _defaultSipReturnUrl = 'https://www.monexo.co/in/';
+
+  Future<void> _openSipWebView(SipDetails sipDetail) async {
+    final checkoutUrl = sipDetail.redirect?.url ?? '';
+    final returnUrl = sipDetail.redirect?.returnUrl?.trim();
+    final effectiveReturnUrl = (returnUrl != null && returnUrl.isNotEmpty)
+        ? returnUrl
+        : _defaultSipReturnUrl;
+
+    if (Utils.isWeb) {
+      openWebWindow(checkoutUrl);
+    } else {
+      context.pushNamed(
+        RoutesName.SipWebView,
+        extra: {
+          Constants.url: checkoutUrl,
+          Constants.returnUrl: effectiveReturnUrl,
+          Constants.amount: amountController.text,
+        },
+      );
+    }
+  }
+
   Future<void> createSip() async {
     if (!checkValidation()) {
       return;
@@ -259,25 +362,30 @@ class _SIPScreenState extends State<SIPScreen> {
     param[ApiParams.debtorEmail] = userDetail?.profileDetails?.email ?? '';
     param[ApiParams.authMode] = auth;
     param[ApiParams.dateValue] = dateController.text;
+    if (isUPISelected) {
+      final saved = await _persistUpiIfNeeded(provider);
+      if (!saved) {
+        setLoading(false);
+        Utils.showAlert(
+            context: context, msg: LanguageHelper.textInvalidUpiId);
+        return;
+      }
+      final upiId = _effectiveUpiId();
+      param['upi_id'] = upiId;
+      Constants.sipUpiId = upiId;
+    }
 
     print(param);
-    var sipDetail = await provider.createSip(param);
+    var result = await provider.createSip(param);
     setLoading(false);
 
     isSipCreated = true;
-    if (sipDetail != null) {
-      var data = jsonEncode({"url": sipDetail.redirect?.url});
-      if (Utils.isWeb) {
-        openWebWindow(sipDetail.redirect?.url ?? "");
-      } else {
-        context.pushNamed(RoutesName.SipWebView, params: {
-          Constants.url: sipDetail.redirect?.url ?? "",
-          Constants.returnUrl: sipDetail.redirect?.returnUrl ?? '',
-          Constants.amount: amountController.text,
-        }, queryParams: {
-          "data": data.base64StringEncodeOriginal()
-        });
-      }
+    if (result.errorMessage != null && result.errorMessage!.isNotEmpty) {
+      Utils.showAlert(context: context, msg: result.errorMessage!);
+      return;
+    }
+    if (result.sip != null) {
+      await _openSipWebView(result.sip!);
     }
   }
 
@@ -869,6 +977,28 @@ class _SIPScreenState extends State<SIPScreen> {
                   SizedBox(height: 30),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                    child: TpvRegisteredBankBanner(
+                      bankName: context
+                              .read<AppStateProvider>()
+                              .userDetails
+                              ?.bankAccountDetails
+                              ?.bankName ??
+                          '',
+                      accountNumber: context
+                              .read<AppStateProvider>()
+                              .userDetails
+                              ?.bankAccountDetails
+                              ?.accountNumber ??
+                          '',
+                      upiId: context
+                          .read<AppStateProvider>()
+                          .userDetails
+                          ?.bankAccountDetails
+                          ?.upiId,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 15.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -886,13 +1016,17 @@ class _SIPScreenState extends State<SIPScreen> {
                         ),
                         Column(
                           children: [
-                            InkWell(
+                            Visibility(
+                              visible: bankDetailData
+                                      ?.data?.variantApiUpiCashfree ??
+                                  false,
+                              child: InkWell(
                               onTap: () {
                                 setState(() {
                                   isUPISelected = !isUPISelected;
                                   isNetBankingSelected = false;
                                   isDebitCardSelected = false;
-                                  auth = isUPISelected ? 'UPI' : '';
+                                  auth = isUPISelected ? 'upi' : '';
 
                                   // amountController.text = '';
                                   // isAmountError = false;
@@ -1017,6 +1151,11 @@ class _SIPScreenState extends State<SIPScreen> {
                                       ),
                                     ],
                                   )),
+                            ),
+                            ),
+                            Visibility(
+                              visible: isUPISelected,
+                              child: _upiInputSection(),
                             ),
                             SizedBox(
                               height: 15,

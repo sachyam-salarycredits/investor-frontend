@@ -96,4 +96,5 @@ class Constants {
   static var sipTenure;
   static var sipDate;
   static var sipPaymnentMethod ;
+  static var sipUpiId;
 }

@@ -35,6 +35,8 @@ class BankDetailModel {
     this.variantApiDebitcard,
     this.variantApiNetbanking,
     this.variantApiAadhaar,
+    this.variantApiUpiCashfree,
+    this.variantApiUpiIdfc,
   });
 
   BankDetailModel.fromJson(dynamic json) {
@@ -50,6 +52,8 @@ class BankDetailModel {
     variantApiDebitcard = json['variant_api_debitcard'];
     variantApiNetbanking = json['variant_api_netbanking'];
     variantApiAadhaar = json['variant_api_aadhaar'];
+    variantApiUpiCashfree = json['variant_api_upi_cashfree'];
+    variantApiUpiIdfc = json['variant_api_upi_idfc'];
   }
   String? object;
   bool? livemode;
@@ -63,6 +67,8 @@ class BankDetailModel {
   bool? variantApiDebitcard;
   bool? variantApiNetbanking;
   bool? variantApiAadhaar;
+  bool? variantApiUpiCashfree;
+  bool? variantApiUpiIdfc;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -78,6 +84,8 @@ class BankDetailModel {
     map['variant_api_debitcard'] = variantApiDebitcard;
     map['variant_api_netbanking'] = variantApiNetbanking;
     map['variant_api_aadhaar'] = variantApiAadhaar;
+    map['variant_api_upi_cashfree'] = variantApiUpiCashfree;
+    map['variant_api_upi_idfc'] = variantApiUpiIdfc;
     return map;
   }
 }

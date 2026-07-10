@@ -427,3 +427,10 @@ class OldSipDetail {
     return data;
   }
 }
+
+class SipCreateResult {
+  final SipDetails? sip;
+  final String? errorMessage;
+
+  SipCreateResult({this.sip, this.errorMessage});
+}

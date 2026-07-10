@@ -410,23 +410,24 @@ class AppRouter {
         },
         routes: [
           GoRoute(
-              path: RoutesName.SipWebView +
-                  "/:" +
-                  Constants.url +
-                  "/:" +
-                  Constants.returnUrl +
-                  "/:" +
-                  Constants.amount,
+              path: RoutesName.SipWebView,
               name: RoutesName.SipWebView,
               pageBuilder: (context, state) {
-                final returnUrl = state.params[Constants.returnUrl] ??
-                    "https://www.monexo.co/in/";
+                final extra = state.extra;
+                final args = extra is Map
+                    ? Map<String, dynamic>.from(extra as Map)
+                    : <String, dynamic>{};
+                final rawReturnUrl =
+                    args[Constants.returnUrl]?.toString().trim() ?? '';
+                final returnUrl = rawReturnUrl.isNotEmpty
+                    ? rawReturnUrl
+                    : "https://www.monexo.co/in/";
                 return MaterialPage(
                     key: state.pageKey,
                     child: SipWebView(
-                      url: state.params[Constants.url] ?? "",
+                      url: args[Constants.url]?.toString() ?? "",
                       returnUrl: returnUrl,
-                      amount: state.params[Constants.amount] ?? "",
+                      amount: args[Constants.amount]?.toString() ?? "",
                     ));
               })
         ]),

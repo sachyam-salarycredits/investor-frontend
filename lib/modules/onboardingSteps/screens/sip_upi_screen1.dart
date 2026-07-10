@@ -1,8 +1,12 @@
+import 'package:Monexo/providers/app_state_provider.dart';
 import 'package:Monexo/routes_management/routes_list.dart';
+import 'package:Monexo/utils/api_constant.dart';
 import 'package:Monexo/utils/colours_util.dart';
+import 'package:Monexo/utils/constants.dart';
 import 'package:Monexo/utils/extensions.dart';
 import 'package:Monexo/utils/fonts.dart';
 import 'package:Monexo/utils/responsive.dart';
+import 'package:Monexo/utils/utils.dart';
 import 'package:Monexo/widgets/custom_button.dart';
 import 'package:Monexo/widgets/header.dart';
 import 'package:Monexo/widgets/input_widget.dart';
@@ -10,6 +14,7 @@ import 'package:Monexo/widgets/loader.dart';
 import 'package:Monexo/widgets/title_header.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class UPIScreenFirst extends StatefulWidget {
   const UPIScreenFirst({Key? key}) : super(key: key);
@@ -21,23 +26,47 @@ class UPIScreenFirst extends StatefulWidget {
 class _UPIScreenFirstState extends State<UPIScreenFirst> {
   bool _isLoading = false;
 
-  //
   FocusNode _focus = FocusNode();
   bool isFocused = false;
   bool isUpiValid = false;
   bool isUpiError = false;
 
   var upiController = TextEditingController();
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    final profileUpi = Constants.sipUpiId?.toString() ?? '';
+    if (profileUpi.isNotEmpty) {
+      upiController.text = profileUpi;
+      isUpiValid = profileUpi.isUpiIdValid;
+    }
   }
 
   @override
   void dispose() {
+    upiController.dispose();
     super.dispose();
-    // Clean up the controller when the widget is disposed.
+  }
+
+  Future<void> _validateAndProceed() async {
+    if (!isUpiValid) {
+      return;
+    }
+    setState(() => _isLoading = true);
+    final provider = context.read<AppStateProvider>();
+    final param = <String, dynamic>{
+      ApiParams.customerId: provider.customerId,
+      ApiParams.custVirAdd: upiController.text.trim(),
+    };
+    final ok = await provider.validateSipUpiMandate(param);
+    setState(() => _isLoading = false);
+    if (!ok) {
+      Utils.showAlert(context: context, msg: 'Please enter valid UPI ID');
+      return;
+    }
+    Constants.sipUpiId = upiController.text.trim();
+    context.pushNamed(RoutesName.UPIScreen2);
   }
 
   @override
@@ -146,15 +175,6 @@ class _UPIScreenFirstState extends State<UPIScreenFirst> {
               child: InputWidget(
                 focusNode: _focus,
                 isFocused: isFocused,
-                // isUPI: true,
-                // rightIcon: isUpiValid
-                //     ? Image(
-                //         width: 25,
-                //         height: 20,
-                //         fit: BoxFit.cover,
-                //         image: AssetImage(LocalImages.upi_valid_icon),
-                //       )
-                //     : Container(),
                 controller: upiController,
                 keyboardType: TextInputType.emailAddress,
                 isValid: isUpiValid,
@@ -177,9 +197,7 @@ class _UPIScreenFirstState extends State<UPIScreenFirst> {
               CustomButton(
                 isDisable: !isUpiValid,
                 titleStr: 'Next',
-                onPress: () {
-                  context.pushNamed(RoutesName.UPIScreen2);
-                },
+                onPress: _validateAndProceed,
               ),
               SizedBox(
                 height: 25,

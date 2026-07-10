@@ -1,8 +1,12 @@
+import 'package:Monexo/providers/app_state_provider.dart';
+import 'package:Monexo/routes_management/routes_list.dart';
+import 'package:Monexo/utils/api_constant.dart';
 import 'package:Monexo/utils/colours_util.dart';
 import 'package:Monexo/utils/constants.dart';
 import 'package:Monexo/utils/extensions.dart';
 import 'package:Monexo/utils/fonts.dart';
 import 'package:Monexo/utils/responsive.dart';
+import 'package:Monexo/utils/utils.dart';
 import 'package:Monexo/widgets/custom_button.dart';
 import 'package:Monexo/widgets/header.dart';
 import 'package:Monexo/widgets/loader.dart';
@@ -10,8 +14,7 @@ import 'package:Monexo/widgets/title_header.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-
-import '../../../routes_management/routes_list.dart';
+import 'package:provider/provider.dart';
 
 class UPIScreenSecond extends StatefulWidget {
   const UPIScreenSecond({Key? key}) : super(key: key);
@@ -334,11 +337,26 @@ class _UPIScreenSecondState extends State<UPIScreenSecond> {
             children: [
               CustomButton(
                 titleStr: 'Proceed',
-                onPress: () {
+                onPress: () async {
+                  setState(() => _isLoading = true);
+                  final provider = context.read<AppStateProvider>();
+                  final param = <String, dynamic>{
+                    ApiParams.customerId: provider.customerId,
+                    ApiParams.custVirAdd: Constants.sipUpiId ?? '',
+                    ApiParams.amount: installment.toString(),
+                    ApiParams.monthDuration: tenure,
+                    ApiParams.amountMaximum: Constants.sipAmount,
+                    ApiParams.dateValue: Constants.sipDate,
+                  };
+                  final ok = await provider.createSipUpiMandate(param);
+                  setState(() => _isLoading = false);
+                  if (!ok) {
+                    Utils.showAlert(
+                        context: context,
+                        msg: 'Failed to create UPI mandate. Please try again.');
+                    return;
+                  }
                   context.pushNamed(RoutesName.UPIScreen3);
-                  // context.pushNamed(RoutesName.UPISuccessScreen, params: {
-                  //   Constants.paymentMethod: 'Net Banking E-Nac',
-                  // });
                 },
               ),
               SizedBox(
