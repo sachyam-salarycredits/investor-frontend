@@ -69,12 +69,11 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         context.read<AppStateProvider>().userFundTransferDetails;
 
     print(
-        'fund details====${fundDetails?.totalAvailableBalance?.availableBalance}');
+        'fund details====${fundDetails?.withdrawableBalance ?? fundDetails?.totalAvailableBalance?.availableBalance}');
     availableAmount =
-        ((fundDetails?.totalAvailableBalance?.availableBalance) ?? 0.0);
-    availableAmount = availableAmount != 0.0
-        ? (fundDetails?.totalAvailableBalance?.availableBalance ?? 0.0) - 0.01
-        : 0.0;
+        ((fundDetails?.withdrawableBalance ??
+                fundDetails?.totalAvailableBalance?.availableBalance) ??
+            0.0);
 
     print(availableAmount);
 
@@ -140,7 +139,8 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       // AFSdk.logEvent(AFSdk.af_withdrawal, value);
       Utils.showAlert(
           context: context,
-          msg: "Withdrawal Successful",
+          msg:
+              "Withdrawal initiated. Funds will be credited to your bank account shortly.",
           onTap: () {
             context.pop();
           });

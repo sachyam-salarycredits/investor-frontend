@@ -72,7 +72,8 @@ class _loanCartPopupDialogState extends State<loanCartPopupDialog> {
 
   verifyOtp() async {
     final state = context.read<AppStateProvider>();
-    final availableBalance = state
+    final availableBalance = state.userFundTransferDetails?.withdrawableBalance ??
+        state
             .userFundTransferDetails?.totalAvailableBalance?.availableBalance ??
         0;
     final totalAmount = state.getTotalCartAmount();

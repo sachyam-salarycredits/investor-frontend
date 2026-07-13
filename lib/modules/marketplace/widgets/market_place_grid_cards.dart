@@ -749,7 +749,8 @@ class MarketPlaceBottomCard extends StatelessWidget {
       return;
     }
 
-    var availableBalance = provider
+    var availableBalance = provider.userFundTransferDetails?.withdrawableBalance ??
+        provider
             .userFundTransferDetails?.totalAvailableBalance?.availableBalance ??
         0;
     var newTotal = 1000 + provider.getTotalCartAmount();

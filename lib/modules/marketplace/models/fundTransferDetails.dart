@@ -14,7 +14,9 @@ class UserFundTransferDetails {
     this.totalFundsTransferred,
     this.totalAvailableBalance,
     this.LoansFullyCompleted,
-    this.liveLoans
+    this.liveLoans,
+    this.pendingWithdrawals,
+    this.withdrawableBalance,
   });
 
   TotalNetYeild? totalNetYeild;
@@ -24,6 +26,8 @@ class UserFundTransferDetails {
   TotalAvailableBalance? totalAvailableBalance;
   int? LoansFullyCompleted;
   int? liveLoans;
+  double? pendingWithdrawals;
+  double? withdrawableBalance;
 
   factory UserFundTransferDetails.fromJson(Map<String, dynamic> json) =>
       UserFundTransferDetails(
@@ -46,6 +50,12 @@ class UserFundTransferDetails {
         json["LoansFullyCompleted"] == null ? null : json["LoansFullyCompleted"],
         liveLoans:
         json["liveLoans"] == null ? null : json["liveLoans"],
+        pendingWithdrawals: json["pendingWithdrawals"] == null
+            ? 0
+            : json["pendingWithdrawals"].toDouble(),
+        withdrawableBalance: json["withdrawableBalance"] == null
+            ? null
+            : json["withdrawableBalance"].toDouble(),
       );
 
   Map<String, dynamic> toJson() => {
@@ -61,6 +71,8 @@ class UserFundTransferDetails {
             : totalAvailableBalance?.toJson(),
         "liveLoans": liveLoans == null ? null : liveLoans,
         "LoansFullyCompleted": LoansFullyCompleted == null ? null : LoansFullyCompleted,
+        "pendingWithdrawals": pendingWithdrawals,
+        "withdrawableBalance": withdrawableBalance,
       };
 }
 

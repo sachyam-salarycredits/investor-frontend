@@ -1193,9 +1193,10 @@ class AppStateProvider with ChangeNotifier {
         print(json.decode(decryptStr));
         userFundTransferDetails =
             UserFundTransferDetails.fromJson(json.decode(decryptStr));
-        Utils.availableAmount =
+        final withdrawable = userFundTransferDetails?.withdrawableBalance ??
             userFundTransferDetails?.totalAvailableBalance?.availableBalance ??
-                0.0;
+            0.0;
+        Utils.availableAmount = withdrawable;
         notifyListeners();
         return true;
       }
