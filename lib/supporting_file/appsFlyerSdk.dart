@@ -48,15 +48,27 @@ class AFSdk {
     appsflyerSdk?.setCustomerUserId(cid);
   }
 
+  /// Resolves and caches AppsFlyer UID. Returns empty string if unavailable.
+  static Future<String> ensureAppsFlyerId() async {
+    if (appFlyId.isNotEmpty) {
+      return appFlyId;
+    }
+    try {
+      final id = await appsflyerSdk?.getAppsFlyerUID();
+      appFlyId = id ?? '';
+      if (appFlyId.isNotEmpty) {
+        print("AppsFlyer ID: $appFlyId");
+      }
+    } catch (_) {}
+    return appFlyId;
+  }
+
   static Future<bool?> logEvent(String eventName, Map? eventValues) async {
     bool? result;
     try {
       result = await appsflyerSdk?.logEvent(eventName, eventValues);
       if (eventName == AFSdk.af_login || eventName == AFSdk.af_register) {
-        appsflyerSdk?.getAppsFlyerUID().then((AppsFlyerId) {
-          print("AppsFlyer ID: ${AppsFlyerId}");
-          appFlyId = AppsFlyerId ?? '';
-        });
+        await ensureAppsFlyerId();
       }
     } on Exception catch (e) {}
     print("Event name ${eventName} with status: ${result.toString()}");

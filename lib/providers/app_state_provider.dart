@@ -2108,14 +2108,23 @@ class AppStateProvider with ChangeNotifier {
   }
 
   void setappsFlyIdUpdate(String appsflyerId) async {
+    var id = appsflyerId.trim();
+    if (id.isEmpty) {
+      id = (await AFSdk.ensureAppsFlyerId()).trim();
+    }
+    // Skip until AppsFlyer UID is ready — empty "" used to trip backend validation.
+    if (id.isEmpty || customerId.isEmpty) {
+      return;
+    }
+
     var url = APIUrls.appsFlyIdUpdate;
     var param = Map<String, dynamic>();
 
     param[ApiParams.customer_user_id] = customerId;
-    param[ApiParams.appsflyerId] = appsflyerId;
+    param[ApiParams.appsflyerId] = id;
 
     var appsFlyIdUpdateResp = await apiCalling.postRequest(
-        url: url, parameters: param, headers: null);
+        url: url, parameters: param, headers: null, isAlert: false);
     var response = json.decode(appsFlyIdUpdateResp);
     if (response["statusCode"] == "200") {}
   }
