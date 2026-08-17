@@ -22,7 +22,7 @@ class Constants {
   /// //////////////////////////////////////////////////
   /// ////////Change environment from here  ////////////
   /// ///Check the CashFree api key before go live /////
-  static const environment = Environments.Dev;
+  static const environment = Environments.QA;
   static const isProd = false;
 
   /// //////////////////////////////////////////////////

@@ -19,9 +19,10 @@ class PrimaryLoanDetails {
         activeLoans: json["activeLoans"] == null
             ? ActiveLoans.fromJson({})
             : ActiveLoans.fromJson(json["activeLoans"]),
-        aboutBorrower: json["aboutBorrower"] == null
-            ? BorrowerDetails()
-            : BorrowerDetails.fromJson(json["aboutBorrower"]),
+        aboutBorrower: BorrowerDetails.fromJson(
+          (json["aboutBorrower"] ?? json["borrowerDetails"] ?? {})
+              as Map<String, dynamic>,
+        ),
       );
 
   Map<String, dynamic> toJson() => {
@@ -156,11 +157,12 @@ class BorrowerDetails {
 
   factory BorrowerDetails.fromJson(Map<String, dynamic> json) =>
       BorrowerDetails(
-        state: json["state"] ?? "-",
-        role: json["role"] ?? "-",
+        state: json["state"] ?? json["city"] ?? "-",
+        role: json["role"] ?? json["occupation"] ?? "-",
         gender: json["gender"] ?? "-",
-        employementType: json["employementType"] ?? "-",
-        age: json["age"] ?? "0",
+        employementType:
+            json["employementType"] ?? json["customerType"] ?? "-",
+        age: (json["age"] ?? json["ageBand"] ?? "0").toString(),
       );
 
   Map<String, dynamic> toJson() => {
